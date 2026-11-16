@@ -1,8 +1,8 @@
 #!/bin/bash
 #
-# Startet die grafische WipeOS-Oberfläche auf tty1.
-# Fällt auf die klassische nwipe-Oberfläche zurück, wenn kein
-# Framebuffer vorhanden ist oder per Boot-Parameter wipeos_gui=0.
+# Starts the graphical WipeOS user interface on tty1.
+# Falls back to the classic nwipe interface if there is no framebuffer
+# or if the boot parameter wipeos_gui=0 is set.
 #
 cd /
 
@@ -10,8 +10,8 @@ if grep -qw "wipeos_gui=0" /proc/cmdline; then
 	exec /usr/bin/nwipe_launcher
 fi
 
-# kurz warten, bis USB-Geräte (Stick, Tastatur, Maus) erkannt sind
-printf "\n  WipeOS wird gestartet ...\n"
+# wait briefly until USB devices (stick, keyboard, mouse) are detected
+printf "\n  Starting WipeOS ...\n"
 prev=""
 for i in $(seq 1 15); do
 	cur=$(dmesg | grep -ci usb)
@@ -20,17 +20,17 @@ for i in $(seq 1 15); do
 	sleep 1
 done
 
-# WipeOS-Stick suchen und beschreibbar einhängen (Kundenkartei, Berichte)
+# find the WipeOS stick and mount it read-write (customers, reports)
 mkdir -p /mnt/shredos
 part=$(/usr/bin/find_shredos_boot_disc.sh 2>/dev/null)
 if [ -n "$part" ] && mount -o rw "$part" /mnt/shredos 2>/dev/null; then
 	export SHREDOS_DATA=/mnt/shredos
-	mkdir -p /mnt/shredos/berichte /mnt/shredos/wipeos
+	mkdir -p /mnt/shredos/reports /mnt/shredos/wipeos
 fi
 
-# Tastaturlayout: Boot-Parameter wipeos_kbd=us, Standard deutsch
+# keyboard layout: boot parameter wipeos_kbd=de, default us
 kbd=$(sed -n 's/.*wipeos_kbd=\([a-z]*\).*/\1/p' /proc/cmdline)
-export SHREDOS_KBD=${kbd:-de}
+export SHREDOS_KBD=${kbd:-us}
 
 echo 0 > /sys/class/graphics/fbcon/cursor_blink 2>/dev/null
 setterm --cursor off 2>/dev/null
@@ -46,19 +46,19 @@ while true; do
 			exec /usr/bin/nwipe_launcher
 			;;
 		20)
-			clear; echo "Fahre herunter ..."
+			clear; echo "Shutting down ..."
 			sync; umount /mnt/shredos 2>/dev/null
 			poweroff
 			sleep 30
 			;;
 		21)
-			clear; echo "Starte neu ..."
+			clear; echo "Restarting ..."
 			sync; umount /mnt/shredos 2>/dev/null
 			reboot
 			sleep 30
 			;;
 		2)
-			# kein Framebuffer: klassische Oberfläche
+			# no framebuffer: classic interface
 			sync; umount /mnt/shredos 2>/dev/null
 			exec /usr/bin/nwipe_launcher
 			;;

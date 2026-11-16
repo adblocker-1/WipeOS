@@ -1,8 +1,8 @@
 /*
- * WipeOS GUI - Einstiegspunkt.
- * Normalbetrieb: zeichnet direkt in den Framebuffer (/dev/fb0).
- * Testbetrieb (SHREDOS_HEADLESS=BxH): zeichnet in den Speicher und
- * speichert Bildschirmfotos laut SHREDOS_TEST_SCRIPT.
+ * WipeOS GUI - entry point.
+ * Normal mode: draws directly to the framebuffer (/dev/fb0).
+ * Test mode (SHREDOS_HEADLESS=WxH): draws to memory and saves
+ * screenshots as listed in SHREDOS_TEST_SCRIPT.
  */
 #include "app.h"
 #include <stdio.h>
@@ -26,7 +26,7 @@ void app_quit(int code)
 }
 static int s_tty = -1;
 
-/* von ui.c für Tests */
+/* from ui.c, for tests */
 void ui_test_action(const char * cmd);
 
 static void on_signal(int sig)
@@ -49,7 +49,7 @@ static void console_graphics(int on)
     if(s_tty >= 0) ioctl(s_tty, KDSETMODE, on ? KD_GRAPHICS : KD_TEXT);
 }
 
-/* ---- Testbetrieb ---- */
+/* ---- test mode ---- */
 static uint8_t * s_mem = NULL;
 static int s_mw, s_mh;
 
@@ -146,12 +146,12 @@ int main(int argc, char ** argv)
     if(!fbdev) fbdev = "/dev/fb0";
     lv_display_t * disp = lv_linux_fbdev_create();
     if(!disp) {
-        fprintf(stderr, "WipeOS GUI: Framebuffer konnte nicht geöffnet werden\n");
+        fprintf(stderr, "WipeOS GUI: could not open the framebuffer\n");
         return 2;
     }
     lv_linux_fbdev_set_file(disp, fbdev);
     if(lv_display_get_horizontal_resolution(disp) <= 0) {
-        fprintf(stderr, "WipeOS GUI: kein Framebuffer unter %s\n", fbdev);
+        fprintf(stderr, "WipeOS GUI: no framebuffer at %s\n", fbdev);
         return 2;
     }
     console_graphics(1);
@@ -159,9 +159,9 @@ int main(int argc, char ** argv)
     ui_init();
 
     while(!s_quit) {
-        ui_tick();
         input_poll_hotplug();
         uint32_t idle = lv_timer_handler();
+        ui_tick();
         if(idle > 20) idle = 20;
         if(idle < 2) idle = 2;
         usleep(idle * 1000);

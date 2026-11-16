@@ -1,6 +1,6 @@
 /*
- * Startet nwipe ohne eigene Oberfläche und liest den Fortschritt
- * aus der Statusdatei (nwipe-Option --status-file, WipeOS-Patch).
+ * Runs nwipe without its own UI and reads progress from the
+ * status file (nwipe option --status-file, WipeOS patch).
  */
 #include "app.h"
 #include <stdio.h>
@@ -19,60 +19,110 @@
 static pid_t s_pid = 0;
 static int s_exit_code = -1;
 
+typedef struct {
+    const char * label;
+    const char * cli;
+    int passes;        /* write passes per round, 0 = read only */
+    const char * desc;
+} method_def_t;
+
+static const method_def_t s_methods[METHOD_COUNT] = {
+    {"PRNG Stream", "random", 1, "Fills the device with a stream from the random number generator."},
+    {"Fill With Zeros", "zero", 1, "Fills the device with zeros (0x00)."},
+    {"Fill With Ones", "one", 1, "Fills the device with ones (0xFF)."},
+    {"RCMP TSSIT OPS-II", "ops2", 8, "Royal Canadian Mounted Police Technical Security Standard, OPS-II."},
+    {"DoD 5220.22-M (Short)", "dodshort", 3, "U.S. Department of Defense 5220.22-M short 3-pass wipe (passes 1, 2 & 7)."},
+    {"DoD 5220.22-M (Full)", "dod522022m", 7, "U.S. Department of Defense 5220.22-M full 7-pass wipe."},
+    {"Gutmann Wipe", "gutmann", 35, "Peter Gutmann's 35-pass method. Very slow, not needed for modern drives."},
+    {"HMG IS5 Enhanced", "is5enh", 3, "UK HMG IS5 (Enhanced) sanitisation method for protectively marked information."},
+    {"Schneier Wipe", "bruce7", 7, "Bruce Schneier's 7-pass mixed-pattern algorithm."},
+    {"BMB21-2019", "bmb", 6, "Chinese State Secrets Bureau BMB21-2019 technical requirement for data sanitisation."},
+    {"Verify Zeros", "verify_zero", 0, "Only reads the device and checks that it is filled with zeros (0x00)."},
+    {"Verify Ones", "verify_one", 0, "Only reads the device and checks that it is filled with ones (0xFF)."},
+};
+
+typedef struct {
+    const char * label;
+    const char * cli;
+} prng_def_t;
+
+static const prng_def_t s_prngs[PRNG_COUNT] = {
+    {"ChaCha20 (CSPRNG)", "chacha20"},
+    {"AES-256-CTR (CSPRNG, needs AES-NI)", "aes_ctr_prng"},
+    {"ISAAC-64 (CSPRNG)", "isaac64"},
+    {"ISAAC (CSPRNG)", "isaac"},
+    {"XORoshiro-256", "xoroshiro256_prng"},
+    {"SplitMix64", "splitmix64"},
+    {"Lagged Fibonacci", "add_lagg_fibonacci_prng"},
+    {"Mersenne Twister", "twister"},
+};
+
 const char * method_label(method_id_t m)
 {
-    switch(m) {
-        case METHOD_AUTO: return "Automatisch";
-        case METHOD_ZERO: return "Schnell";
-        case METHOD_DODSHORT: return "DoD 5220.22-M (kurz)";
-        case METHOD_GUTMANN: return "Gutmann";
-        default: return "?";
-    }
-}
-
-const char * method_short(method_id_t m)
-{
-    switch(m) {
-        case METHOD_AUTO: return "Zufallsdaten 1× + Prüfung";
-        case METHOD_ZERO: return "Nullen 1× + Prüfung";
-        case METHOD_DODSHORT: return "DoD kurz 3× + Prüfung";
-        case METHOD_GUTMANN: return "Gutmann 35× + Prüfung";
-        default: return "?";
-    }
+    return (m >= 0 && m < METHOD_COUNT) ? s_methods[m].label : "?";
 }
 
 const char * method_desc(method_id_t m)
 {
-    switch(m) {
-        case METHOD_AUTO: return "Einmal mit Zufallsdaten überschreiben, danach jeden Block prüfen.";
-        case METHOD_ZERO: return "Einmal mit Nullen überschreiben und prüfen.";
-        case METHOD_DODSHORT: return "Muster, Komplement, Zufallsdaten – danach prüfen.";
-        case METHOD_GUTMANN: return "Sehr gründlich, aber extrem langsam. Für moderne Laufwerke nicht nötig.";
-        default: return "";
-    }
+    return (m >= 0 && m < METHOD_COUNT) ? s_methods[m].desc : "";
+}
+
+int method_pass_count(method_id_t m)
+{
+    return (m >= 0 && m < METHOD_COUNT) ? s_methods[m].passes : 1;
+}
+
+int method_is_verify_only(method_id_t m)
+{
+    return method_pass_count(m) == 0;
 }
 
 const char * method_passes(method_id_t m)
 {
-    switch(m) {
-        case METHOD_AUTO: return "1 Durchgang";
-        case METHOD_ZERO: return "1 Durchgang";
-        case METHOD_DODSHORT: return "3 Durchgänge";
-        case METHOD_GUTMANN: return "35 Durchgänge";
-        default: return "";
+    static char buf[32];
+    int p = method_pass_count(m);
+    if(p == 0) return "read only";
+    snprintf(buf, sizeof(buf), "%d pass%s", p, p == 1 ? "" : "es");
+    return buf;
+}
+
+const char * prng_label(int i)
+{
+    return (i >= 0 && i < PRNG_COUNT) ? s_prngs[i].label : "?";
+}
+
+/* nwipe forces "no blanking" for OPS-II and the verify methods */
+static int effective_blank(void)
+{
+    return g.blank && g.method != METHOD_OPS2 && !method_is_verify_only(g.method);
+}
+
+void method_summary(char * out, size_t len)
+{
+    if(method_is_verify_only(g.method)) {
+        snprintf(out, len, "%s (read only)", method_label(g.method));
+        return;
     }
+    const char * v = g.verify == 2 ? "verify all passes" : (g.verify == 1 ? "verify last pass" : "no verification");
+    snprintf(out, len, "%s · %d round%s%s · %s", method_label(g.method), g.rounds, g.rounds == 1 ? "" : "s",
+             effective_blank() ? " + zero blanking" : "", v);
+}
+
+const char * method_short(method_id_t m)
+{
+    (void)m;
+    static char buf[160];
+    method_summary(buf, sizeof(buf));
+    return buf;
 }
 
 double method_factor(method_id_t m)
 {
-    /* Schreibdurchgänge + ein Prüfdurchgang (Lesen) */
-    switch(m) {
-        case METHOD_AUTO: return 2.0;
-        case METHOD_ZERO: return 2.0;
-        case METHOD_DODSHORT: return 4.0;
-        case METHOD_GUTMANN: return 36.0;
-        default: return 2.0;
-    }
+    int p = method_pass_count(m);
+    if(p == 0) return 1.0;
+    double writes = (double)p * (g.rounds > 0 ? g.rounds : 1) + (effective_blank() ? 1 : 0);
+    double reads = g.verify == 2 ? writes : (g.verify == 1 ? 1 : 0);
+    return writes + reads;
 }
 
 long long estimate_seconds(const drive_t * d, method_id_t m)
@@ -105,17 +155,19 @@ int wipe_start(void)
     argv[a++] = (char *)nwipe;
     argv[a++] = "--nogui";
     argv[a++] = "--autonuke";
-    switch(g.method) {
-        case METHOD_ZERO: argv[a++] = "--method=zero"; break;
-        case METHOD_DODSHORT: argv[a++] = "--method=dodshort"; break;
-        case METHOD_GUTMANN: argv[a++] = "--method=gutmann"; break;
-        default: argv[a++] = "--method=random"; break;
+    static char m_arg[64], p_arg[64], r_arg[32];
+    snprintf(m_arg, sizeof(m_arg), "--method=%s", s_methods[g.method].cli);
+    argv[a++] = m_arg;
+    if(!method_is_verify_only(g.method)) {
+        snprintf(p_arg, sizeof(p_arg), "--prng=%s", s_prngs[g.prng].cli);
+        argv[a++] = p_arg;
+        argv[a++] = g.verify == 2 ? "--verify=all" : (g.verify == 1 ? "--verify=last" : "--verify=off");
+        snprintf(r_arg, sizeof(r_arg), "--rounds=%d", g.rounds > 0 ? g.rounds : 1);
+        argv[a++] = r_arg;
+        if(!g.blank) argv[a++] = "--noblank";
     }
-    argv[a++] = "--prng=chacha20";  /* kryptografisch sicher, ohne Hardware-Abhängigkeit */
-    argv[a++] = "--verify=last";
-    argv[a++] = "--noblank";
-    /* nwipes eigene Einzel-PDFs nur in /tmp ablegen; "-P noPDF" würde nwipe.conf dauerhaft ändern */
-    if(system("mkdir -p /tmp/nwipe_pdf") != 0) { /* egal */ }
+    /* keep nwipe's own per-drive PDFs in /tmp; "-P noPDF" would change nwipe.conf permanently */
+    if(system("mkdir -p /tmp/nwipe_pdf") != 0) { /* ignore */ }
     argv[a++] = "-P";
     argv[a++] = "/tmp/nwipe_pdf";
     argv[a++] = "--logfile=" LOG_FILE;
@@ -226,11 +278,11 @@ int wipe_poll(void)
             s_pid = 0;
             g.wipe_end = time(NULL);
             parse_status();
-            /* Protokoll neben die Berichte kopieren */
+            /* copy the log next to the reports */
             char cmd[1024];
-            snprintf(cmd, sizeof(cmd), "mkdir -p '%s/../berichte' && cp " LOG_FILE " '%s/../berichte/%s_nwipe.log' 2>/dev/null",
+            snprintf(cmd, sizeof(cmd), "mkdir -p '%s/../reports' && cp " LOG_FILE " '%s/../reports/%s_nwipe.log' 2>/dev/null",
                      storage_dir(), storage_dir(), g.order_no);
-            if(system(cmd) != 0) { /* nicht kritisch */ }
+            if(system(cmd) != 0) { /* not critical */ }
             return 0;
         }
         return 1;

@@ -1,8 +1,7 @@
 /*
- * Ablage der Kundenkartei, Techniker, Auftragsnummern und Firmendaten.
- * Alles liegt als einfache Textdateien auf dem WipeOS-USB-Stick
- * (Ordner wipeos/), damit es Neustarts übersteht und am PC
- * bearbeitet werden kann.
+ * Storage for customers, technicians, job numbers and company details.
+ * Everything is kept as plain text files on the WipeOS USB stick
+ * (folder wipeos/) so it survives reboots and can be edited on a PC.
  */
 #include "app.h"
 #include <stdio.h>
@@ -83,7 +82,7 @@ static void path_of(char * out, size_t len, const char * file)
     snprintf(out, len, "%s/%s", s_dir, file);
 }
 
-/* ---- CSV: Felder durch ';' getrennt, ';' und Zeilenumbrüche im Text werden ersetzt ---- */
+/* ---- CSV: fields separated by ';', ';' and line breaks inside values are replaced ---- */
 
 static void csv_clean(char * dst, const char * src, size_t len)
 {
@@ -114,7 +113,7 @@ static int csv_split(char * line, char ** fields, int max)
 int storage_load_customers(customer_t * list, int max)
 {
     char path[512];
-    path_of(path, sizeof(path), "kunden.csv");
+    path_of(path, sizeof(path), "customers.csv");
     FILE * fp = fopen(path, "r");
     if(!fp) return 0;
     char line[1024];
@@ -122,7 +121,7 @@ int storage_load_customers(customer_t * list, int max)
     while(n < max && fgets(line, sizeof(line), fp)) {
         str_trim(line);
         if(line[0] == '\0' || line[0] == '#') continue;
-        if(strncmp(line, "Kunden-Nr", 9) == 0) continue;
+        if((strncmp(line, "Kunden-Nr", 9) == 0 || strncmp(line, "CustomerNo", 10) == 0)) continue;
         char * f[8] = {0};
         int k = csv_split(line, f, 8);
         if(k < 2) continue;
@@ -145,11 +144,11 @@ int storage_load_customers(customer_t * list, int max)
 int storage_save_customer(const customer_t * c)
 {
     char path[512];
-    path_of(path, sizeof(path), "kunden.csv");
+    path_of(path, sizeof(path), "customers.csv");
     int exists = access(path, F_OK) == 0;
     FILE * fp = fopen(path, "a");
     if(!fp) return -1;
-    if(!exists) fprintf(fp, "Kunden-Nr;Name;Ansprechpartner;Strasse;PLZ;Ort;Telefon/E-Mail;Referenz\r\n");
+    if(!exists) fprintf(fp, "CustomerNo;Name;Contact;Street;Postcode;City;Phone/Email;Reference\r\n");
     char a[8][160];
     csv_clean(a[0], c->no, 160);
     csv_clean(a[1], c->name, 160);
@@ -176,13 +175,13 @@ void storage_next_customer_no(char * out, size_t len)
         int v = atoi(p);
         if(v > max) max = v;
     }
-    snprintf(out, len, "K-%d", max + 1);
+    snprintf(out, len, "C-%d", max + 1);
 }
 
 int storage_load_techs(tech_t * list, int max)
 {
     char path[512];
-    path_of(path, sizeof(path), "techniker.csv");
+    path_of(path, sizeof(path), "technicians.csv");
     FILE * fp = fopen(path, "r");
     if(!fp) return 0;
     char line[512];
@@ -205,7 +204,7 @@ int storage_load_techs(tech_t * list, int max)
 int storage_save_tech(const tech_t * t)
 {
     char path[512];
-    path_of(path, sizeof(path), "techniker.csv");
+    path_of(path, sizeof(path), "technicians.csv");
     int exists = access(path, F_OK) == 0;
     FILE * fp = fopen(path, "a");
     if(!fp) return -1;
@@ -222,7 +221,7 @@ int storage_save_tech(const tech_t * t)
 void storage_next_order_no(char * out, size_t len)
 {
     char path[512];
-    path_of(path, sizeof(path), "auftragsnummer.txt");
+    path_of(path, sizeof(path), "job_counter.txt");
     time_t now = time(NULL);
     struct tm tm;
     localtime_r(&now, &tm);
@@ -243,13 +242,13 @@ void storage_next_order_no(char * out, size_t len)
         fclose(fp);
         storage_sync();
     }
-    snprintf(out, len, "A-%d-%04d", year, no);
+    snprintf(out, len, "WO-%d-%04d", year, no);
 }
 
 void storage_load_org(void)
 {
     char path[512];
-    path_of(path, sizeof(path), "firma.txt");
+    path_of(path, sizeof(path), "company.txt");
     g.org_name[0] = '\0';
     g.org_address[0] = '\0';
     FILE * fp = fopen(path, "r");
@@ -269,10 +268,10 @@ void storage_load_org(void)
 void storage_save_org(void)
 {
     char path[512];
-    path_of(path, sizeof(path), "firma.txt");
+    path_of(path, sizeof(path), "company.txt");
     FILE * fp = fopen(path, "w");
     if(!fp) return;
-    fprintf(fp, "# Zeile 1: Firmenname, Zeile 2: Anschrift (erscheint im Löschbericht)\n");
+    fprintf(fp, "# Line 1: company name, line 2: address (shown on the erasure report)\n");
     fprintf(fp, "%s\n%s\n", g.org_name, g.org_address);
     fclose(fp);
     storage_sync();

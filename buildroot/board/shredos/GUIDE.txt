@@ -1,0 +1,46 @@
+WIPEOS
+======
+
+Starting
+--------
+Plug in the stick and boot the computer from USB (boot menu, usually F12,
+F9, F11 or Esc). In the boot menu choose "WipeOS" (starts automatically).
+The user interface appears after a few seconds. Use a mouse, touchscreen or
+keyboard (Tab = next field, Enter = continue).
+
+Workflow
+--------
+1. Create job: create a new customer or pick an existing one, choose the
+   technician and enter a system name for the device.
+   Serial number, manufacturer and model are read from the BIOS.
+2. Select drives (the WipeOS stick itself is locked).
+3. Choose a method ("Automatic" is recommended) and confirm.
+4. Erasing - do not switch the device off.
+5. Finished: the erasure report (PDF) is saved on this stick in the
+   "reports" folder, next to the nwipe log.
+
+Files on this stick
+-------------------
+reports\                 Erasure reports (PDF) and logs
+wipeos\customers.csv     Customer list (semicolon separated, opens in
+                         Excel/LibreOffice)
+wipeos\technicians.csv   Technicians (ID;Name)
+wipeos\company.txt       Your company: line 1 name, line 2 address
+                         (shown on the report, also editable in the UI
+                         under "Your company")
+wipeos\job_counter.txt   Counter for job numbers
+
+Notes
+-----
+- Method: overwriting with nwipe followed by verification.
+  Random data comes from ChaCha20 (cryptographically secure).
+- Hardware erase (ATA Secure Erase / NVMe Sanitize) is available in the
+  classic nwipe interface: "Classic nwipe" button in step 1 or the boot
+  menu entry "WipeOS (classic nwipe interface)".
+- Keyboard layout: toggle US/DE in the sidebar of step 1, or add
+  "wipeos_kbd=de" to the linux line in the boot menu (press "e").
+- Console: Ctrl+Alt+F2.
+
+WipeOS is based on ShredOS (github.com/PartialVolume/shredos.x86_64)
+and nwipe (github.com/martijnvanbrummelen/nwipe), both GPL-2.0.
+Source code: github.com/adblocker-1/WipeOS

@@ -1,6 +1,6 @@
 /*
- * WipeOS GUI - grafische Oberfläche für nwipe
- * Gemeinsame Datentypen und Funktionen.
+ * WipeOS GUI - graphical front end for nwipe
+ * Shared types and functions.
  */
 #ifndef SHREDOS_GUI_APP_H
 #define SHREDOS_GUI_APP_H
@@ -51,18 +51,18 @@ typedef struct {
     uint64_t size;
     int rotational;
     int removable;
-    int is_boot;       /* WipeOS-Startmedium: niemals löschen */
+    int is_boot;       /* WipeOS boot drive: never erase */
     int selected;
 } drive_t;
 
-/* Ergebnis/Fortschritt eines Laufwerks aus der nwipe-Statusdatei */
+/* result/progress of one drive from the nwipe status file */
 typedef struct {
     char device[48];
     char model[128];
     char serial[96];
     char bus[16];
     uint64_t size;
-    int status;        /* 1 = läuft, 0 = fertig, -1 = wartet */
+    int status;        /* 1 = running, 0 = done, -1 = waiting */
     int result;        /* 0 = ok */
     double percent;
     int pass, passes, passtype, round, rounds;
@@ -87,19 +87,29 @@ typedef struct {
 } wipe_status_t;
 
 typedef enum {
-    METHOD_AUTO = 0,   /* Zufallsdaten 1x + Prüfung */
-    METHOD_ZERO,       /* Nullen 1x + Prüfung */
-    METHOD_DODSHORT,   /* DoD 5220.22-M kurz */
-    METHOD_GUTMANN,    /* Gutmann 35x */
+    METHOD_PRNG = 0,   /* PRNG Stream (recommended) */
+    METHOD_ZERO,       /* Fill With Zeros */
+    METHOD_ONE,        /* Fill With Ones */
+    METHOD_OPS2,       /* RCMP TSSIT OPS-II */
+    METHOD_DODSHORT,   /* DoD 5220.22-M (Short) */
+    METHOD_DODFULL,    /* DoD 5220.22-M (Full) */
+    METHOD_GUTMANN,    /* Gutmann Wipe */
+    METHOD_IS5ENH,     /* HMG IS5 Enhanced */
+    METHOD_SCHNEIER,   /* Bruce Schneier 7-pass */
+    METHOD_BMB,        /* BMB21-2019 */
+    METHOD_VERIFY_ZERO, /* read only: check for zeros */
+    METHOD_VERIFY_ONE, /* read only: check for ones */
     METHOD_COUNT
 } method_id_t;
 
+#define PRNG_COUNT 8
+
 typedef struct {
-    /* Firma (Durchführende Organisation) */
+    /* company performing the erasure */
     char org_name[128];
     char org_address[160];
 
-    /* Auftrag */
+    /* job */
     char order_no[32];
     customer_t customer;
     int customer_is_new;
@@ -114,8 +124,12 @@ typedef struct {
     int drive_count;
 
     method_id_t method;
+    int prng;          /* index into prng_label() */
+    int verify;        /* 0 = off, 1 = last pass, 2 = all passes */
+    int rounds;        /* 1..5 */
+    int blank;         /* final blanking pass with zeros */
 
-    /* Ergebnis */
+    /* result */
     wipe_status_t status;
     time_t wipe_start, wipe_end;
     char report_path[512];
@@ -126,14 +140,14 @@ extern app_state_t g;
 
 /* storage.c */
 void storage_init(void);
-const char * storage_dir(void);      /* Datenordner (auf dem USB-Stick, sonst /tmp) */
+const char * storage_dir(void);      /* data folder (on the USB stick, otherwise /tmp) */
 int storage_on_usb(void);
 int storage_load_customers(customer_t * list, int max);
-int storage_save_customer(const customer_t * c);    /* neu anhängen */
+int storage_save_customer(const customer_t * c);    /* append */
 void storage_next_customer_no(char * out, size_t len);
 int storage_load_techs(tech_t * list, int max);
 int storage_save_tech(const tech_t * t);
-void storage_next_order_no(char * out, size_t len); /* reserviert die Nummer */
+void storage_next_order_no(char * out, size_t len); /* reserves the number */
 void storage_load_org(void);
 void storage_save_org(void);
 void storage_sync(void);
@@ -146,14 +160,18 @@ void format_duration(long long secs, char * out, size_t len);
 
 /* wipe.c */
 int wipe_start(void);
-int wipe_poll(void);         /* liest Statusdatei, 1 = nwipe läuft noch */
+int wipe_poll(void);         /* reads the status file, 1 = nwipe still running */
 void wipe_abort(void);
 int wipe_running(void);
 const char * method_label(method_id_t m);
 const char * method_short(method_id_t m);
 const char * method_desc(method_id_t m);
 const char * method_passes(method_id_t m);
-double method_factor(method_id_t m);  /* Datenmenge relativ zur Laufwerksgröße */
+double method_factor(method_id_t m);  /* data volume relative to drive size */
+int method_is_verify_only(method_id_t m);
+int method_pass_count(method_id_t m);
+const char * prng_label(int i);
+void method_summary(char * out, size_t len);  /* e.g. "PRNG Stream · 1 round · verify last pass" */
 long long estimate_seconds(const drive_t * d, method_id_t m);
 
 /* report.c */
@@ -163,9 +181,12 @@ int report_create(char * out_path, size_t len, char * err, size_t errlen);
 void input_init(lv_display_t * disp);
 void input_poll_hotplug(void);
 int input_has_keyboard(void);
+int input_layout_is_de(void);
+int input_take_wheel(void);
+void input_toggle_layout(void);
 
 /* main.c */
-void app_quit(int code);  /* 10 = klassisches nwipe, 20 = ausschalten, 21 = Neustart */
+void app_quit(int code);  /* 10 = classic nwipe, 20 = power off, 21 = reboot */
 
 /* ui.c */
 void ui_init(void);
@@ -182,7 +203,7 @@ LV_FONT_DECLARE(f_sans_b30)
 LV_FONT_DECLARE(f_mono_m14)
 LV_FONT_DECLARE(f_mono_m24)
 
-/* Hilfen */
+/* helpers */
 void str_copy(char * dst, const char * src, size_t len);
 void str_trim(char * s);
 

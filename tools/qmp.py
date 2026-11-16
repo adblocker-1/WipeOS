@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Kleiner QMP-Client: Bildschirmfotos, Mausklicks und Tastatur für QEMU-Tests."""
+"""Small QMP client: screenshots, mouse clicks and keyboard input for QEMU tests."""
 import json
 import socket
 import sys
@@ -52,7 +52,7 @@ class QMP:
         time.sleep(0.5)
 
     def key(self, *keys):
-        """keys: qcode-Namen, gleichzeitig gedrückt (z. B. 'shift', 'a')."""
+        """keys: qcode names pressed together (e.g. 'shift', 'a')."""
         down = [{"type": "key", "data": {"down": True, "key": {"type": "qcode", "data": k}}} for k in keys]
         up = [{"type": "key", "data": {"down": False, "key": {"type": "qcode", "data": k}}} for k in reversed(keys)]
         self.cmd("input-send-event", events=down)
@@ -60,8 +60,23 @@ class QMP:
         self.cmd("input-send-event", events=up)
         time.sleep(0.08)
 
+    def type_us(self, text):
+        """Types text using the US keyboard layout."""
+        special = {" ": ["spc"], "-": ["minus"], ".": ["dot"], ",": ["comma"], "_": ["shift", "minus"],
+                   "@": ["shift", "2"], "/": ["slash"]}
+        for ch in text:
+            if ch in special:
+                self.key(*special[ch])
+            elif ch.isdigit():
+                self.key(ch)
+            elif ch.isalpha():
+                if ch.isupper():
+                    self.key("shift", ch.lower())
+                else:
+                    self.key(ch)
+
     def type(self, text):
-        """Tippt Text mit deutschem Layout (QWERTZ)."""
+        """Types text using the German keyboard layout (QWERTZ)."""
         special = {" ": ["spc"], "-": ["slash"], ".": ["dot"], ",": ["comma"], "_": ["shift", "slash"],
                    "ä": ["apostrophe"], "ö": ["semicolon"], "ü": ["bracket_left"], "ß": ["minus"],
                    "Ä": ["shift", "apostrophe"], "Ö": ["shift", "semicolon"], "Ü": ["shift", "bracket_left"],

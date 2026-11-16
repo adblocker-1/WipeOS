@@ -1,30 +1,30 @@
 #!/bin/bash
 #
-# Baut das WipeOS-USB-Image aus den Quellen.
-# Getestet auf Ubuntu 24.04. Der erste Build dauert je nach Rechner 2–4 Stunden
-# und braucht rund 30 GB freien Speicher.
+# Builds the WipeOS USB image from source.
+# Tested on Ubuntu 24.04. The first build takes 2–4 hours depending on the machine
+# and needs about 30 GB of free disk space.
 #
 set -euo pipefail
 
 SHREDOS_REPO=https://github.com/PartialVolume/shredos.x86_64.git
-SHREDOS_COMMIT=f6fe37735283ca367134db4aac9ef2aca2949594   # getestete ShredOS-Version
+SHREDOS_COMMIT=f6fe37735283ca367134db4aac9ef2aca2949594   # tested ShredOS version
 
 ROOT=$(cd "$(dirname "$0")" && pwd)
 WORK=${WORK:-$ROOT/work}
 
-echo "==> LVGL holen"
+echo "==> Fetching LVGL"
 git -C "$ROOT" submodule update --init gui/lvgl
 
 if [ ! -d "$WORK/shredos/.git" ]; then
-	echo "==> ShredOS holen ($SHREDOS_COMMIT)"
+	echo "==> Fetching ShredOS ($SHREDOS_COMMIT)"
 	mkdir -p "$WORK"
 	git clone --filter=blob:none "$SHREDOS_REPO" "$WORK/shredos"
 	git -C "$WORK/shredos" checkout -q "$SHREDOS_COMMIT"
-	echo "==> WipeOS-Änderungen anwenden"
+	echo "==> Applying WipeOS changes"
 	git -C "$WORK/shredos" apply "$ROOT/buildroot/shredos.patch"
 fi
 
-echo "==> WipeOS-Dateien kopieren"
+echo "==> Copying WipeOS files"
 cp -r "$ROOT/buildroot/board" "$ROOT/buildroot/package" "$WORK/shredos/"
 chmod 755 "$WORK/shredos/board/shredos/fsoverlay/usr/bin/shredos_gui_launcher"
 mkdir -p "$WORK/shredos/package/shredos"
@@ -36,14 +36,14 @@ rsync -a --delete \
 	"$ROOT/gui/" "$WORK/shredos/package/shredos-gui/src/"
 
 cd "$WORK/shredos"
-echo "==> Konfigurieren"
+echo "==> Configuring"
 make shredos_lite_defconfig
 make shredos-gui-dirclean >/dev/null 2>&1 || true
-echo "==> Bauen (das dauert)"
+echo "==> Building (this takes a while)"
 make
 
 mkdir -p "$ROOT/out"
 cp output/images/wipeos-*.img "$ROOT/out/WipeOS.img"
 (cd "$ROOT/out" && sha256sum WipeOS.img > WipeOS.img.sha256)
 echo
-echo "Fertig: $ROOT/out/WipeOS.img"
+echo "Done: $ROOT/out/WipeOS.img"

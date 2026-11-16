@@ -1,8 +1,8 @@
 /*
- * Eingabe: Maus/Touch und Tastatur direkt über evdev.
- * Tastatur mit deutschem Layout (QWERTZ, Umlaute), Text wird in das
- * fokussierte Textfeld geschrieben, Steuertasten gehen an LVGL.
- * Neu angesteckte Geräte werden alle paar Sekunden erkannt.
+ * Input: mouse/touch and keyboard directly via evdev.
+ * US and German keyboard layouts; text goes into the focused text
+ * field, navigation keys go to LVGL.
+ * Newly plugged-in devices are detected every few seconds.
  */
 #include "app.h"
 #include <stdio.h>
@@ -37,6 +37,7 @@ static lv_indev_t * s_kp;
 static lv_obj_t * s_cursor;
 static int s_w = 1280, s_h = 800;
 static int s_x, s_y, s_pressed;
+static int s_wheel;
 static int s_has_kbd = 0, s_has_mouse = 0;
 static int s_shift = 0, s_altgr = 0, s_ctrl = 0, s_caps = 0;
 static uint32_t s_keyq[64];
@@ -50,7 +51,7 @@ typedef struct {
     const char * a;
 } keymap_t;
 
-/* Deutsches Layout (de-latin1 ohne tote Tasten) */
+/* German layout (de-latin1 without dead keys) */
 static const keymap_t s_map_de[] = {
     {KEY_1, "1", "!", ""}, {KEY_2, "2", "\"", "²"}, {KEY_3, "3", "§", "³"}, {KEY_4, "4", "$", ""},
     {KEY_5, "5", "%", ""}, {KEY_6, "6", "&", ""}, {KEY_7, "7", "/", "{"}, {KEY_8, "8", "(", "["},
@@ -72,7 +73,7 @@ static const keymap_t s_map_de[] = {
     {0, NULL, NULL, NULL}
 };
 
-/* US-Layout, falls per Kernel-Parameter/Umgebung gewünscht (SHREDOS_KBD=us) */
+/* US layout (default); German via SHREDOS_KBD=de or the toggle in the UI */
 static const keymap_t s_map_us[] = {
     {KEY_1, "1", "!", ""}, {KEY_2, "2", "@", ""}, {KEY_3, "3", "#", ""}, {KEY_4, "4", "$", ""},
     {KEY_5, "5", "%", ""}, {KEY_6, "6", "^", ""}, {KEY_7, "7", "&", ""}, {KEY_8, "8", "*", ""},
@@ -94,7 +95,7 @@ static const keymap_t s_map_us[] = {
     {0, NULL, NULL, NULL}
 };
 
-static const keymap_t * s_map = s_map_de;
+static const keymap_t * s_map = s_map_us;
 
 static void kq_push(uint32_t k)
 {
@@ -110,7 +111,7 @@ static int is_letter(unsigned short code)
     for(int i = 0; s_map[i].n; i++) if(s_map[i].code == code) n = s_map[i].n;
     if(!n) return 0;
     unsigned char c = (unsigned char)n[0];
-    return (c >= 'a' && c <= 'z') || c == 0xC3; /* inkl. ä ö ü */
+    return (c >= 'a' && c <= 'z') || c == 0xC3; /* incl. ä ö ü */
 }
 
 static void insert_text(const char * t)
@@ -153,7 +154,7 @@ static void handle_key(unsigned short code, int value)
         kq_push(k);
         return;
     }
-    if(s_ctrl) return; /* keine Steuerzeichen einfügen */
+    if(s_ctrl) return; /* do not insert control characters */
     for(int i = 0; s_map[i].n; i++) {
         if(s_map[i].code != code) continue;
         int shift = s_shift;
@@ -241,6 +242,7 @@ static void drain(void)
             if(ev.type == EV_REL) {
                 if(ev.code == REL_X) s_x += ev.value;
                 else if(ev.code == REL_Y) s_y += ev.value;
+                else if(ev.code == REL_WHEEL) s_wheel += ev.value;
             }
             else if(ev.type == EV_ABS && (d->kind & DEV_ABS)) {
                 if(ev.code == ABS_X || ev.code == ABS_MT_POSITION_X)
@@ -275,7 +277,7 @@ static int s_kp_phase = 0;
 static void kp_read(lv_indev_t * indev, lv_indev_data_t * data)
 {
     LV_UNUSED(indev);
-    /* jede Taste als Druck + Loslassen melden */
+    /* report every key as press + release */
     if(s_kp_phase == 1) {
         data->key = s_kp_last;
         data->state = LV_INDEV_STATE_RELEASED;
@@ -300,7 +302,7 @@ static void kp_read(lv_indev_t * indev, lv_indev_data_t * data)
 void input_init(lv_display_t * disp)
 {
     const char * kb = getenv("SHREDOS_KBD");
-    if(kb && strncmp(kb, "us", 2) == 0) s_map = s_map_us;
+    if(kb && strncmp(kb, "de", 2) == 0) s_map = s_map_de;
     s_w = lv_display_get_horizontal_resolution(disp);
     s_h = lv_display_get_vertical_resolution(disp);
     s_x = s_w / 2;
@@ -311,7 +313,7 @@ void input_init(lv_display_t * disp)
     lv_indev_set_read_cb(s_ptr, ptr_read);
     lv_indev_set_display(s_ptr, disp);
 
-    /* Mauszeiger: schlichter Pfeil aus zwei Ebenen */
+    /* mouse pointer: simple round marker */
     s_cursor = lv_obj_create(lv_layer_sys());
     lv_obj_remove_style_all(s_cursor);
     lv_obj_set_size(s_cursor, 14, 14);
@@ -347,4 +349,21 @@ void input_poll_hotplug(void)
 int input_has_keyboard(void)
 {
     return s_has_kbd;
+}
+
+int input_layout_is_de(void)
+{
+    return s_map == s_map_de;
+}
+
+void input_toggle_layout(void)
+{
+    s_map = (s_map == s_map_de) ? s_map_us : s_map_de;
+}
+
+int input_take_wheel(void)
+{
+    int w = s_wheel;
+    s_wheel = 0;
+    return w;
 }
