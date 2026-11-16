@@ -1,6 +1,10 @@
-# WipeOS
+<p align="center">
+  <img src="docs/images/logo.svg" width="128" alt="WipeOS logo: an open hard drive being wiped clean with a cloth">
+</p>
 
-**Securely erase hard drives and SSDs – with customer, technician and erasure report.**
+<h1 align="center">WipeOS</h1>
+
+<p align="center"><strong>Securely erase hard drives and SSDs – with customer, technician and erasure report.</strong></p>
 
 WipeOS is a bootable USB stick for securely erasing hard drives and SSDs. It is based on
 [ShredOS](https://github.com/PartialVolume/shredos.x86_64) and
@@ -288,7 +292,7 @@ buildroot/                Additions to the ShredOS build
   package/shredos-gui/    Buildroot package of the interface
   package/nwipe/          nwipe patch: --status-file option for live progress
   board/shredos/          Startup script, short guide, company.txt template
-docs/images/              Screenshots used in this guide
+docs/images/              Logo and the screenshots used in this guide
 tools/                    QEMU test script and QMP helper
 build.sh                  Builds the complete image
 ```
