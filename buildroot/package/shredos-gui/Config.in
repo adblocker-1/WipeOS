@@ -1,0 +1,8 @@
+config BR2_PACKAGE_SHREDOS_GUI
+	bool "shredos-gui"
+	depends on BR2_PACKAGE_NWIPE
+	help
+	  Grafische Oberfläche für ShredOS (LVGL, Framebuffer):
+	  Auftrag mit Kunde und Techniker anlegen, Laufwerke und
+	  Methode wählen, nwipe steuern und Löschbericht als PDF
+	  auf dem ShredOS-Stick ablegen.

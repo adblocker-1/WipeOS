@@ -1,0 +1,182 @@
+diff --git a/board/shredos/fsoverlay/etc/inittab b/board/shredos/fsoverlay/etc/inittab
+index eaf10a94..bff26237 100644
+--- a/board/shredos/fsoverlay/etc/inittab
++++ b/board/shredos/fsoverlay/etc/inittab
+@@ -18,7 +18,7 @@ si10::sysinit:/usr/bin/nwipe_process_disable
+ rcS:12345:wait:/etc/init.d/rcS
+ 
+ sole::respawn:/sbin/getty -L  console 0 vt100 # GENERIC_SERIAL
+-1:3:respawn:/sbin/getty 38400 tty1 -n -l /usr/bin/nwipe_launcher
++1:3:respawn:/sbin/getty 38400 tty1 -n -l /usr/bin/shredos_gui_launcher
+ 2:3:respawn:/sbin/getty 38400 tty2 -n -l /bin/sh
+ # tty3 is reserved for the regular console
+ 4:3:respawn:/sbin/getty 38400 tty4 -n -l /usr/bin/smartdmt_launcher
+diff --git a/board/shredos/genimage.cfg b/board/shredos/genimage.cfg
+index 8242ab1b..7a2f4c3d 100644
+--- a/board/shredos/genimage.cfg
++++ b/board/shredos/genimage.cfg
+@@ -1,6 +1,6 @@
+ image boot.vfat {
+         vfat {
+-                extraargs = "-F 32 -n SHREDOS"
++                extraargs = "-F 32 -n WIPEOS"
+                 file boot/bzImage           { image = 'bzImage' }
+                 file boot/grub/grub.cfg     { image = 'grub.cfg' }
+                 file boot/version.txt       { image = 'version.txt' }
+@@ -12,10 +12,12 @@ image boot.vfat {
+                 file EFI/BOOT/memtest.efi   { image = 'memtest.efi' }
+                 file shredos.ico            { image = 'shredos.ico' }
+                 file README.txt             { image = 'README.txt' }
++                file ANLEITUNG.txt          { image = 'ANLEITUNG.txt' }
++                file wipeos/firma.txt       { image = 'firma.txt' }
+                 file autorun.inf            { image = 'autorun.inf' }
+         }
+ 
+-size = 119873792
++size = 122499328
+ }
+ 
+ image shredos.img {
+diff --git a/board/shredos/grub.cfg b/board/shredos/grub.cfg
+index 44449cd7..85dea3d1 100644
+--- a/board/shredos/grub.cfg
++++ b/board/shredos/grub.cfg
+@@ -1,11 +1,15 @@
+ set default="0"
+ set timeout="15"
+ 
+-menuentry "ShredOS" {
++menuentry "WipeOS" {
+     linux /boot/bzImage console=tty3 loglevel=3
+ }
+ 
+-menuentry "ShredOS (nomodeset - display issues? try this)" {
++menuentry "WipeOS (klassische nwipe-Oberfläche)" {
++    linux /boot/bzImage console=tty3 loglevel=3 wipeos_gui=0
++}
++
++menuentry "WipeOS (nomodeset - bei Anzeigeproblemen)" {
+     linux /boot/bzImage console=tty3 loglevel=3 nomodeset
+ }
+ 
+diff --git a/board/shredos/make_img_file.sh b/board/shredos/make_img_file.sh
+index 4bbc817b..3930d279 100755
+--- a/board/shredos/make_img_file.sh
++++ b/board/shredos/make_img_file.sh
+@@ -17,6 +17,8 @@ cp "${BINARIES_DIR}/efi-part/EFI/BOOT/bootx64.efi"     "${BINARIES_DIR}/bootx64.
+ 
+ cp "board/shredos/autorun.inf"             "${BINARIES_DIR}/autorun.inf"                  || exit 1
+ cp "board/shredos/README.txt"              "${BINARIES_DIR}/README.txt"                   || exit 1
++cp "board/shredos/ANLEITUNG.txt"           "${BINARIES_DIR}/ANLEITUNG.txt"                || exit 1
++cp "board/shredos/firma.txt"               "${BINARIES_DIR}/firma.txt"                    || exit 1
+ cp "board/shredos/shredos.ico"             "${BINARIES_DIR}/shredos.ico"                  || exit 1
+ 
+ # version.txt is used to help identify the (boot) USB disk
+@@ -55,7 +57,7 @@ genimage --rootpath="${TARGET_DIR}" \
+     --tmppath="${BUILD_DIR}/genimage.tmp"                                                 || exit 1
+ 
+ SUFFIXIMG="${version}_$(date +%Y%m%d)"
+-FINAL_IMAGE_PATH="${BINARIES_DIR}/shredos-${SUFFIXIMG}.img"
++FINAL_IMAGE_PATH="${BINARIES_DIR}/wipeos-${SUFFIXIMG}.img"
+ mv "${BINARIES_DIR}/shredos.img" "${FINAL_IMAGE_PATH}"                                    || exit 1
+ 
+ GREEN="\033[0;32m"
+diff --git a/board/shredos/make_iso_file.sh b/board/shredos/make_iso_file.sh
+index f81ff93c..b8285802 100755
+--- a/board/shredos/make_iso_file.sh
++++ b/board/shredos/make_iso_file.sh
+@@ -9,7 +9,7 @@ fi
+ version=$(cat board/shredos/fsoverlay/etc/shredos/version.txt)
+ 
+ SUFFIXISO="${version}_$(date +%Y%m%d)"
+-FINAL_ISO_PATH="${BINARIES_DIR}/shredos-${SUFFIXISO}.iso"
++FINAL_ISO_PATH="${BINARIES_DIR}/wipeos-${SUFFIXISO}.iso"
+ 
+ mv "${BINARIES_DIR}/rootfs.iso9660" "${FINAL_ISO_PATH}"             || exit 1
+ 
+diff --git a/configs/shredos_lite_defconfig b/configs/shredos_lite_defconfig
+index 69252722..c8e3febf 100644
+--- a/configs/shredos_lite_defconfig
++++ b/configs/shredos_lite_defconfig
+@@ -3,8 +3,8 @@ BR2_x86_nocona=y
+ BR2_PACKAGE_GLIBC_UTILS=y
+ BR2_TOOLCHAIN_BUILDROOT_CXX=y
+ BR2_TOOLCHAIN_GLIBC_GCONV_LIBS_COPY=y
+-BR2_TARGET_GENERIC_HOSTNAME="shredos"
+-BR2_TARGET_GENERIC_ISSUE="Welcome to ShredOS https://github.com/PartialVolume/shredos.x86_64"
++BR2_TARGET_GENERIC_HOSTNAME="wipeos"
++BR2_TARGET_GENERIC_ISSUE="Willkommen bei WipeOS (basiert auf ShredOS)"
+ BR2_INIT_SYSV=y
+ BR2_ROOTFS_MERGED_USR=y
+ BR2_SYSTEM_BIN_SH_BASH=y
+@@ -104,3 +104,4 @@ BR2_PACKAGE_HOST_E2FSPROGS=y
+ BR2_PACKAGE_HOST_GENIMAGE=y
+ BR2_PACKAGE_HOST_PYTHON3_BZIP2=y
+ BR2_PACKAGE_HOST_PYTHON3_SSL=y
++BR2_PACKAGE_SHREDOS_GUI=y
+diff --git a/package/Config.in b/package/Config.in
+index 93004e3b..32e409dc 100644
+--- a/package/Config.in
++++ b/package/Config.in
+@@ -2297,6 +2297,7 @@ endif
+ 	source "package/musl-fts/Config.in"
+ 	source "package/neon-2-sse/Config.in"
+ 	source "package/nwipe/Config.in"
++	source "package/shredos-gui/Config.in"
+ 	source "package/openblas/Config.in"
+ 	source "package/orc/Config.in"
+ 	source "package/p11-kit/Config.in"
+diff --git a/package/hexedit/hexedit.mk b/package/hexedit/hexedit.mk
+index cbbfd734..0ca09b67 100644
+--- a/package/hexedit/hexedit.mk
++++ b/package/hexedit/hexedit.mk
+@@ -5,7 +5,9 @@
+ ################################################################################
+ 
+ HEXEDIT_VERSION = 1.6
+-HEXEDIT_SITE = $(call github,pixel,hexedit,$(HEXEDIT_VERSION))
++HEXEDIT_SITE = https://github.com/pixel/hexedit.git
++HEXEDIT_SITE_METHOD = git
++BR_NO_CHECK_HASH_FOR += $(HEXEDIT_SOURCE)
+ HEXEDIT_DEPENDENCIES = ncurses parted 
+ 
+ define HEXEDIT_INITSH
+diff --git a/package/kernel_cmdline_extractor/kernel_cmdline_extractor.mk b/package/kernel_cmdline_extractor/kernel_cmdline_extractor.mk
+index 82021eef..0109f61d 100644
+--- a/package/kernel_cmdline_extractor/kernel_cmdline_extractor.mk
++++ b/package/kernel_cmdline_extractor/kernel_cmdline_extractor.mk
+@@ -5,7 +5,9 @@
+ ################################################################################
+ 
+ KERNEL_CMDLINE_EXTRACTOR_VERSION = v1.04
+-KERNEL_CMDLINE_EXTRACTOR_SITE = $(call github,PartialVolume,kernel_cmdline_extractor,$(KERNEL_CMDLINE_EXTRACTOR_VERSION))
++KERNEL_CMDLINE_EXTRACTOR_SITE = https://github.com/PartialVolume/kernel_cmdline_extractor.git
++KERNEL_CMDLINE_EXTRACTOR_SITE_METHOD = git
++BR_NO_CHECK_HASH_FOR += $(KERNEL_CMDLINE_EXTRACTOR_SOURCE)
+ KERNEL_CMDLINE_EXTRACTOR_AUTORECONF = YES
+ 
+ $(eval $(autotools-package))
+diff --git a/package/nwipe/002-nwipe-banner-patch.sh b/package/nwipe/002-nwipe-banner-patch.sh
+index 7df2fe39..132441e0 100755
+--- a/package/nwipe/002-nwipe-banner-patch.sh
++++ b/package/nwipe/002-nwipe-banner-patch.sh
+@@ -1,3 +1,3 @@
+ version=`cat ../../../board/shredos/fsoverlay/etc/shredos/version.txt`
+-sed -i "/banner/c\const char* banner = \"ShredOS v$version\";" ./src/version.c
++sed -i "/banner/c\const char* banner = \"WipeOS v$version\";" ./src/version.c
+ 
+diff --git a/package/shredos_hexviewer/shredos_hexviewer.mk b/package/shredos_hexviewer/shredos_hexviewer.mk
+index f58b8e57..f70cb207 100644
+--- a/package/shredos_hexviewer/shredos_hexviewer.mk
++++ b/package/shredos_hexviewer/shredos_hexviewer.mk
+@@ -5,7 +5,9 @@
+ ################################################################################
+ 
+ SHREDOS_HEXVIEWER_VERSION = $(call qstrip,$(BR2_PACKAGE_SHREDOS_HEXVIEWER_GIT_REVISION))
+-SHREDOS_HEXVIEWER_SITE = $(call github,PartialVolume,shredos_hexviewer,$(SHREDOS_HEXVIEWER_VERSION))
++SHREDOS_HEXVIEWER_SITE = https://github.com/PartialVolume/shredos_hexviewer.git
++SHREDOS_HEXVIEWER_SITE_METHOD = git
++BR_NO_CHECK_HASH_FOR += $(SHREDOS_HEXVIEWER_SOURCE)
+ SHREDOS_HEXVIEWER_LICENSE = GPL-2.0
+ SHREDOS_HEXVIEWER_LICENSE_FILES = LICENSE
+ SHREDOS_HEXVIEWER_AUTORECONF = YES

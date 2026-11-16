@@ -1,0 +1,69 @@
+#!/bin/bash
+#
+# Startet die grafische WipeOS-Oberfläche auf tty1.
+# Fällt auf die klassische nwipe-Oberfläche zurück, wenn kein
+# Framebuffer vorhanden ist oder per Boot-Parameter wipeos_gui=0.
+#
+cd /
+
+if grep -qw "wipeos_gui=0" /proc/cmdline; then
+	exec /usr/bin/nwipe_launcher
+fi
+
+# kurz warten, bis USB-Geräte (Stick, Tastatur, Maus) erkannt sind
+printf "\n  WipeOS wird gestartet ...\n"
+prev=""
+for i in $(seq 1 15); do
+	cur=$(dmesg | grep -ci usb)
+	[ "$cur" = "$prev" ] && [ $i -gt 3 ] && break
+	prev=$cur
+	sleep 1
+done
+
+# WipeOS-Stick suchen und beschreibbar einhängen (Kundenkartei, Berichte)
+mkdir -p /mnt/shredos
+part=$(/usr/bin/find_shredos_boot_disc.sh 2>/dev/null)
+if [ -n "$part" ] && mount -o rw "$part" /mnt/shredos 2>/dev/null; then
+	export SHREDOS_DATA=/mnt/shredos
+	mkdir -p /mnt/shredos/berichte /mnt/shredos/wipeos
+fi
+
+# Tastaturlayout: Boot-Parameter wipeos_kbd=us, Standard deutsch
+kbd=$(sed -n 's/.*wipeos_kbd=\([a-z]*\).*/\1/p' /proc/cmdline)
+export SHREDOS_KBD=${kbd:-de}
+
+echo 0 > /sys/class/graphics/fbcon/cursor_blink 2>/dev/null
+setterm --cursor off 2>/dev/null
+clear
+
+while true; do
+	/usr/bin/shredos-gui
+	rc=$?
+	case $rc in
+		10)
+			clear
+			sync; umount /mnt/shredos 2>/dev/null
+			exec /usr/bin/nwipe_launcher
+			;;
+		20)
+			clear; echo "Fahre herunter ..."
+			sync; umount /mnt/shredos 2>/dev/null
+			poweroff
+			sleep 30
+			;;
+		21)
+			clear; echo "Starte neu ..."
+			sync; umount /mnt/shredos 2>/dev/null
+			reboot
+			sleep 30
+			;;
+		2)
+			# kein Framebuffer: klassische Oberfläche
+			sync; umount /mnt/shredos 2>/dev/null
+			exec /usr/bin/nwipe_launcher
+			;;
+		*)
+			sleep 1
+			;;
+	esac
+done

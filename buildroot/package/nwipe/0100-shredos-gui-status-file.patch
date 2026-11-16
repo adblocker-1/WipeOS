@@ -1,0 +1,147 @@
+diff --git a/src/nwipe.c b/src/nwipe.c
+index 0e44ea7..bc04df4 100644
+--- a/src/nwipe.c
++++ b/src/nwipe.c
+@@ -280,6 +280,81 @@ static int nwipe_ensure_directory( const char* path )
+     return 0;
+ }
+ 
++/* ShredOS GUI: write the state of every selected drive to a small key=value file.
++ * The file is written to <path>.tmp and renamed, so readers never see partial data. */
++static void nwipe_write_status_file( nwipe_context_t** c, int count, int final )
++{
++    char tmp[PATHNAME_MAX + 8];
++    FILE* fp;
++    int i;
++    time_t now = time( NULL );
++
++    if( nwipe_options.status_file[0] == '\0' )
++        return;
++
++    snprintf( tmp, sizeof( tmp ), "%s.tmp", nwipe_options.status_file );
++    fp = fopen( tmp, "w" );
++    if( fp == NULL )
++        return;
++
++    fprintf( fp, "version=%s\n", version_string );
++    fprintf( fp, "time=%lld\n", (long long) now );
++    fprintf( fp, "final=%d\n", final );
++    fprintf( fp, "count=%d\n", count );
++    fprintf( fp, "method=%s\n", nwipe_method_label( nwipe_options.method ) );
++    fprintf( fp, "prng=%s\n", nwipe_options.prng ? nwipe_options.prng->label : "" );
++    fprintf( fp, "verify=%d\n", (int) nwipe_options.verify );
++    fprintf( fp, "noblank=%d\n", nwipe_options.noblank );
++
++    for( i = 0; i < count; i++ )
++    {
++        nwipe_context_t* d = c[i];
++        double percent = 0.0;
++        double elapsed = 0.0;
++        unsigned long long tput = 0;
++        long long eta = -1;
++
++        if( d->round_size > 0 )
++            percent = (double) d->round_done / (double) d->round_size * 100.0;
++        if( d->wipe_status == 0 && d->result == 0 )
++            percent = 100.0;
++        if( d->start_time > 0 )
++            elapsed = difftime( d->wipe_status == 0 && d->end_time > 0 ? d->end_time : now, d->start_time );
++        if( elapsed > 0 )
++            tput = (unsigned long long) ( (double) d->round_done / elapsed );
++        if( tput > 0 && d->round_size > d->round_done && d->wipe_status == 1 )
++            eta = (long long) ( ( d->round_size - d->round_done ) / tput );
++
++        fprintf( fp, "d%d.device=%s\n", i, d->device_name ? d->device_name : "" );
++        fprintf( fp, "d%d.model=%s\n", i, d->device_model ? d->device_model : "" );
++        fprintf( fp, "d%d.serial=%s\n", i, d->device_serial_no );
++        fprintf( fp, "d%d.bus=%s\n", i, d->device_type_str );
++        fprintf( fp, "d%d.size=%llu\n", i, (unsigned long long) d->device_size );
++        fprintf( fp, "d%d.status=%d\n", i, d->wipe_status );
++        fprintf( fp, "d%d.result=%d\n", i, d->result );
++        fprintf( fp, "d%d.percent=%.2f\n", i, percent );
++        fprintf( fp, "d%d.pass=%d\n", i, d->pass_working );
++        fprintf( fp, "d%d.passes=%d\n", i, d->pass_count );
++        fprintf( fp, "d%d.passtype=%d\n", i, (int) d->pass_type );
++        fprintf( fp, "d%d.round=%d\n", i, d->round_working );
++        fprintf( fp, "d%d.rounds=%d\n", i, d->round_count );
++        fprintf( fp, "d%d.throughput=%llu\n", i, tput );
++        fprintf( fp, "d%d.eta=%lld\n", i, eta );
++        fprintf( fp, "d%d.start=%lld\n", i, (long long) d->start_time );
++        fprintf( fp, "d%d.end=%lld\n", i, (long long) d->end_time );
++        fprintf( fp, "d%d.bytes_erased=%llu\n", i, (unsigned long long) d->bytes_erased );
++        fprintf( fp, "d%d.pass_errors=%llu\n", i, (unsigned long long) d->pass_errors );
++        fprintf( fp, "d%d.verify_errors=%llu\n", i, (unsigned long long) d->verify_errors );
++        fprintf( fp, "d%d.fsync_errors=%llu\n", i, (unsigned long long) d->fsyncdata_errors );
++        fprintf( fp, "d%d.hpa_status=%d\n", i, d->HPA_status );
++    }
++
++    fflush( fp );
++    fsync( fileno( fp ) );
++    fclose( fp );
++    rename( tmp, nwipe_options.status_file );
++}
++
+ int main( int argc, char** argv )
+ {
+     int nwipe_optind;  // The result of nwipe_options().
+@@ -1118,9 +1193,13 @@ int main( int argc, char** argv )
+             i++;
+             continue;
+         }
++        nwipe_write_status_file( c2, nwipe_selected, 0 );
+         sleep( 1 ); /* DO NOT REMOVE ! Stops the routine hogging CPU cycles */
+     }
+ 
++    /* ShredOS GUI: final state of all drives */
++    nwipe_write_status_file( c2, nwipe_selected, 1 );
++
+     if( terminate_signal != 1 )
+     {
+         if( !nwipe_options.nowait && !nwipe_options.autopoweroff )
+diff --git a/src/options.c b/src/options.c
+index 638b11d..6153220 100644
+--- a/src/options.c
++++ b/src/options.c
+@@ -134,6 +134,9 @@ int nwipe_options_parse( int argc, char** argv )
+         /* Whether to display the gui. */
+         { "nogui", no_argument, 0, 0 },
+ 
++        /* ShredOS GUI: write machine readable progress to this file */
++        { "status-file", required_argument, 0, 0 },
++
+         /* Whether to anonymize the serial numbers. */
+         { "quiet", no_argument, 0, 0 },
+ 
+@@ -211,6 +214,7 @@ int nwipe_options_parse( int argc, char** argv )
+     memset( nwipe_options.logfile, '\0', sizeof( nwipe_options.logfile ) );
+     memset( nwipe_options.PDFreportpath, '\0', sizeof( nwipe_options.PDFreportpath ) );
+     strncpy( nwipe_options.PDFreportpath, ".", 2 );
++    memset( nwipe_options.status_file, '\0', sizeof( nwipe_options.status_file ) );
+ 
+     /*
+      * Read PDF Enable/Disable settings from nwipe.conf if available
+@@ -524,6 +528,12 @@ int nwipe_options_parse( int argc, char** argv )
+                     break;
+                 }
+ 
++                if( strcmp( nwipe_options_long[i].name, "status-file" ) == 0 )
++                {
++                    strncpy( nwipe_options.status_file, optarg, sizeof( nwipe_options.status_file ) - 1 );
++                    break;
++                }
++
+                 if( strcmp( nwipe_options_long[i].name, "nogui" ) == 0 )
+                 {
+                     /* check for the full option name, as getopt_long() allows abbreviations and can lead to unintended
+diff --git a/src/options.h b/src/options.h
+index 3a1ef61..e9f3552 100644
+--- a/src/options.h
++++ b/src/options.h
+@@ -66,6 +66,7 @@ typedef struct
+     void* method;  // A function pointer to the wipe method that will be used.
+     char logfile[FILENAME_MAX];  // The filename to log the output to.
+     char PDFreportpath[PATHNAME_MAX];  // The path to write the PDF report to.
++    char status_file[PATHNAME_MAX];  // ShredOS GUI: machine readable status file, empty = disabled.
+     char exclude[MAX_NUMBER_EXCLUDED_DRIVES][MAX_DRIVE_PATH_LENGTH];  // Drives excluded from the search.
+     nwipe_prng_t* prng;  // The pseudo random number generator implementation. pointer to the function.
+     int quiet;  // Anonymize serial numbers
