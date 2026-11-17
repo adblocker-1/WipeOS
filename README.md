@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/images/logo.svg" width="128" alt="WipeOS logo: an open hard drive being wiped clean with a cloth">
+  <img src="docs/images/logo.png" width="200" alt="WipeOS logo: an open hard drive being wiped clean with a pink cloth, with ones and zeros dissolving into sparks">
 </p>
 
 <h1 align="center">WipeOS</h1>
