@@ -7,7 +7,7 @@
 SHREDOS_GUI_VERSION = 1.0
 SHREDOS_GUI_SITE = $(TOPDIR)/package/shredos-gui/src
 SHREDOS_GUI_SITE_METHOD = local
-SHREDOS_GUI_LICENSE = MIT (LVGL), Public Domain (PDFGen), OFL-1.1 (IBM Plex)
+SHREDOS_GUI_LICENSE = MIT (LVGL), Public Domain (PDFGen, stb_image), OFL-1.1 (IBM Plex)
 SHREDOS_GUI_DEPENDENCIES = nwipe
 
 define SHREDOS_GUI_BUILD_CMDS

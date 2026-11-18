@@ -12,24 +12,28 @@
 void app_quit(int code);
 
 /* ---------- Colours ---------- */
-#define COL_BG 0xF3F2EE
-#define COL_SURFACE 0xFFFFFF
-#define COL_LINE 0xDEDCD5
-#define COL_FIELD 0xC9C6BD
-#define COL_SOFT 0xECEBE6
-#define COL_INK 0x16181B
-#define COL_MUTED 0x5F646B
-#define COL_ACCENT 0xD9480F
-#define COL_ACCENT_SOFT 0xFBE9E0
-#define COL_ACCENT_TEXT 0x7A2A08
-#define COL_GREEN 0x2B8A3E
-#define COL_GREEN_SOFT 0xE6F4EA
-#define COL_RED 0xC92A2A
-#define COL_RED_SOFT 0xFBE5E5
-#define COL_SIDEBAR 0x16181B
-#define COL_SIDE_TEXT 0xE9E8E4
-#define COL_SIDE_MUTED 0x9EA3AA
-#define COL_SIDE_ACTIVE 0x2A2D32
+/* "Midnight" theme, matching the WipeOS logo */
+#define COL_BG 0x0E1E38
+#define COL_SURFACE 0x142A4B
+#define COL_FIELD_BG 0x0E2140
+#define COL_LINE 0x22406A
+#define COL_FIELD 0x355780
+#define COL_SOFT 0x1A3358
+#define COL_INK 0xEEF2F8
+#define COL_MUTED 0xA3B3CA
+#define COL_BTN 0x2A4A75
+#define COL_ACCENT 0xC2408A
+#define COL_ACCENT_SOFT 0x3A2350
+#define COL_ACCENT_TEXT 0xF4B8D8
+#define COL_EYEBROW 0x8ACDFF
+#define COL_GREEN 0x2FA35A
+#define COL_GREEN_SOFT 0x143A2C
+#define COL_RED 0xE5484D
+#define COL_RED_SOFT 0x3E1E28
+#define COL_SIDEBAR 0x0A162B
+#define COL_SIDE_TEXT 0xEEF2F8
+#define COL_SIDE_MUTED 0x93A6C2
+#define COL_SIDE_ACTIVE 0x1A3358
 
 #define C(hex) lv_color_hex(hex)
 
@@ -56,6 +60,46 @@ static int s_tech_sel = -1;
 static lv_obj_t * s_ta_cust[7];
 static lv_obj_t * s_ta_search;
 static lv_obj_t * s_cust_list;
+
+/* logos as LVGL images (ARGB8888) */
+static lv_image_dsc_t s_logo_dsc, s_clogo_dsc;
+static uint8_t * s_logo_buf, * s_clogo_buf;
+
+/* src NULL = built-in WipeOS logo */
+static int logo_dsc_init(lv_image_dsc_t * dsc, uint8_t ** buf, const img_t * src)
+{
+    img_t tmp;
+    memset(&tmp, 0, sizeof(tmp));
+    if(!src) {
+        if(img_wipeos_logo(0, &tmp) != 0) return -1;
+        src = &tmp;
+    }
+    if(dsc->data) lv_image_cache_drop(dsc);
+    free(*buf);
+    size_t sz = (size_t)src->w * src->h * 4;
+    *buf = malloc(sz);
+    if(!*buf) {
+        img_free(&tmp);
+        memset(dsc, 0, sizeof(*dsc));
+        return -1;
+    }
+    for(size_t i = 0; i < (size_t)src->w * src->h; i++) {
+        (*buf)[i * 4 + 0] = src->rgba[i * 4 + 2];
+        (*buf)[i * 4 + 1] = src->rgba[i * 4 + 1];
+        (*buf)[i * 4 + 2] = src->rgba[i * 4 + 0];
+        (*buf)[i * 4 + 3] = src->rgba[i * 4 + 3];
+    }
+    memset(dsc, 0, sizeof(*dsc));
+    dsc->header.magic = LV_IMAGE_HEADER_MAGIC;
+    dsc->header.cf = LV_COLOR_FORMAT_ARGB8888;
+    dsc->header.w = (uint32_t)src->w;
+    dsc->header.h = (uint32_t)src->h;
+    dsc->header.stride = (uint32_t)src->w * 4;
+    dsc->data_size = (uint32_t)sz;
+    dsc->data = *buf;
+    img_free(&tmp);
+    return 0;
+}
 static lv_obj_t * s_cust_body;
 static lv_obj_t * s_ta_sys, * s_ta_asset, * s_ta_note;
 static lv_obj_t * s_err_label;
@@ -169,9 +213,9 @@ static lv_obj_t * button(lv_obj_t * parent, const char * txt, btn_kind_t kind, l
     lv_obj_set_style_outline_color(b, C(COL_ACCENT), LV_STATE_FOCUS_KEY);
     lv_obj_set_style_outline_width(b, 3, LV_STATE_FOCUS_KEY);
     lv_obj_set_style_outline_pad(b, 2, LV_STATE_FOCUS_KEY);
-    uint32_t bg = COL_INK, fg = 0xFFFFFF;
+    uint32_t bg = COL_BTN, fg = 0xFFFFFF;
     switch(kind) {
-        case BTN_DARK: bg = COL_INK; fg = 0xFFFFFF; break;
+        case BTN_DARK: bg = COL_BTN; fg = 0xFFFFFF; break;
         case BTN_ACCENT: bg = COL_ACCENT; fg = 0xFFFFFF; break;
         case BTN_DANGER: bg = COL_RED; fg = 0xFFFFFF; break;
         case BTN_GHOST:
@@ -186,9 +230,9 @@ static lv_obj_t * button(lv_obj_t * parent, const char * txt, btn_kind_t kind, l
         lv_obj_set_style_border_color(b, C(COL_FIELD), 0);
         lv_obj_set_style_border_width(b, 1, 0);
     }
-    lv_obj_set_style_bg_color(b, C(kind == BTN_GHOST || kind == BTN_LINK ? COL_SOFT : 0x3A3D42), LV_STATE_PRESSED);
-    if(kind == BTN_ACCENT) lv_obj_set_style_bg_color(b, C(0xA8380B), LV_STATE_PRESSED);
-    lv_obj_set_style_bg_color(b, C(0xBDBAB2), LV_STATE_DISABLED);
+    lv_obj_set_style_bg_color(b, C(kind == BTN_GHOST || kind == BTN_LINK ? COL_SOFT : 0x355780), LV_STATE_PRESSED);
+    if(kind == BTN_ACCENT) lv_obj_set_style_bg_color(b, C(0x9E2F6E), LV_STATE_PRESSED);
+    lv_obj_set_style_bg_color(b, C(0x22406A), LV_STATE_DISABLED);
     lv_obj_t * l = label(b, txt, &f_sans_sb16, fg);
     lv_obj_center(l);
     if(cb) lv_obj_add_event_cb(b, cb, LV_EVENT_CLICKED, ud);
@@ -218,8 +262,9 @@ static lv_obj_t * field(lv_obj_t * parent, const char * caption, const char * va
     lv_obj_set_style_radius(ta, 8, 0);
     lv_obj_set_style_pad_hor(ta, 12, 0);
     lv_obj_set_style_pad_ver(ta, 9, 0);
-    lv_obj_set_style_bg_color(ta, C(COL_SURFACE), 0);
-    lv_obj_set_style_text_color(ta, C(0x8A8F96), LV_PART_TEXTAREA_PLACEHOLDER);
+    lv_obj_set_style_bg_color(ta, C(COL_FIELD_BG), 0);
+    lv_obj_set_style_bg_opa(ta, LV_OPA_COVER, 0);
+    lv_obj_set_style_text_color(ta, C(0x7187A6), LV_PART_TEXTAREA_PLACEHOLDER);
     lv_obj_set_style_bg_color(ta, C(COL_ACCENT), LV_PART_CURSOR);
     lv_obj_set_style_border_color(ta, C(COL_ACCENT), LV_PART_CURSOR);
     lv_obj_set_style_outline_width(ta, 0, LV_STATE_FOCUS_KEY);
@@ -340,8 +385,8 @@ static lv_obj_t * modal_open(const char * title, int width)
     s_modal = lv_obj_create(lv_layer_top());
     lv_obj_remove_style_all(s_modal);
     lv_obj_set_size(s_modal, LV_PCT(100), LV_PCT(100));
-    lv_obj_set_style_bg_color(s_modal, C(0x16181B), 0);
-    lv_obj_set_style_bg_opa(s_modal, LV_OPA_50, 0);
+    lv_obj_set_style_bg_color(s_modal, C(0x050C1A), 0);
+    lv_obj_set_style_bg_opa(s_modal, LV_OPA_60, 0);
     lv_obj_add_flag(s_modal, LV_OBJ_FLAG_CLICKABLE);
 
     s_main_group = lv_group_get_default();
@@ -430,19 +475,9 @@ static void build_sidebar(lv_obj_t * parent)
     lv_obj_set_style_pad_row(sb, 32, 0);
 
     lv_obj_t * logo = row(sb, 10);
-    lv_obj_t * mark = box(logo);
-    lv_obj_set_size(mark, 24, 24);
-    lv_obj_set_style_radius(mark, 6, 0);
-    lv_obj_set_style_bg_opa(mark, LV_OPA_COVER, 0);
-    lv_obj_set_style_bg_color(mark, C(COL_ACCENT), 0);
-    for(int i = 0; i < 3; i++) {
-        lv_obj_t * bar = box(mark);
-        lv_obj_set_size(bar, i == 2 ? 8 : 13, 2);
-        lv_obj_set_style_bg_opa(bar, LV_OPA_COVER, 0);
-        lv_obj_set_style_bg_color(bar, C(COL_INK), 0);
-        lv_obj_set_style_radius(bar, 1, 0);
-        lv_obj_set_pos(bar, 6, 7 + i * 4);
-    }
+    if(!s_logo_dsc.data) logo_dsc_init(&s_logo_dsc, &s_logo_buf, NULL);
+    lv_obj_t * mark = lv_image_create(logo);
+    lv_image_set_src(mark, &s_logo_dsc);
     label(logo, "WipeOS", &f_sans_b24, COL_SIDE_TEXT);
 
     lv_obj_t * nav = col(sb, 4);
@@ -464,13 +499,13 @@ static void build_sidebar(lv_obj_t * parent)
         else if(done) lv_obj_set_style_bg_color(dot, C(COL_GREEN), 0);
         else {
             lv_obj_set_style_bg_opa(dot, LV_OPA_TRANSP, 0);
-            lv_obj_set_style_border_color(dot, C(0x4A4E55), 0);
+            lv_obj_set_style_border_color(dot, C(0x355780), 0);
             lv_obj_set_style_border_width(dot, 1, 0);
         }
         char num[8];
         if(done) str_copy(num, LV_SYMBOL_OK, sizeof(num));
         else snprintf(num, sizeof(num), "%d", n);
-        lv_obj_t * nl = label(dot, num, &f_sans_sb14, cur ? COL_INK : (done ? 0xFFFFFF : COL_SIDE_MUTED));
+        lv_obj_t * nl = label(dot, num, &f_sans_sb14, cur || done ? 0xFFFFFF : COL_SIDE_MUTED);
         lv_obj_center(nl);
         label(r, s_step_names[i], cur ? &f_sans_sb16 : &f_sans_r16, cur ? 0xFFFFFF : (done ? 0xC9CCD1 : COL_SIDE_MUTED));
     }
@@ -501,7 +536,7 @@ static void build_sidebar(lv_obj_t * parent)
     else {
         lv_obj_t * info = col(sb, 10);
         lv_obj_set_style_pad_all(info, 14, 0);
-        lv_obj_set_style_border_color(info, C(0x33373D), 0);
+        lv_obj_set_style_border_color(info, C(0x22406A), 0);
         lv_obj_set_style_border_width(info, 1, 0);
         lv_obj_set_style_radius(info, 10, 0);
         char t[160];
@@ -811,33 +846,198 @@ static void build_tech_list(void)
     }
 }
 
-static lv_obj_t * s_ta_org, * s_ta_orgaddr;
+static lv_obj_t * s_ta_org, * s_ta_orgaddr, * s_ta_orgcontact;
+static lv_obj_t * s_logo_prev, * s_logo_list, * s_logo_msg;
+static char s_logo_names[LOGO_MAX_FILES][LOGO_NAME_LEN];
+static int s_nlogos;
+static int s_logo_pick; /* -1 = no logo */
+
+static void logo_refresh(void);
+
+static void logo_pick_cb(lv_event_t * e)
+{
+    int i = (int)(intptr_t)lv_event_get_user_data(e);
+    s_logo_pick = i;
+    logo_refresh();
+}
+
+static void logo_rescan_cb(lv_event_t * e)
+{
+    (void)e;
+    char cur[LOGO_NAME_LEN] = "";
+    if(s_logo_pick >= 0 && s_logo_pick < s_nlogos) str_copy(cur, s_logo_names[s_logo_pick], sizeof(cur));
+    s_nlogos = storage_list_images(s_logo_names, LOGO_MAX_FILES);
+    s_logo_pick = -1;
+    for(int i = 0; i < s_nlogos; i++)
+        if(strcmp(s_logo_names[i], cur) == 0) s_logo_pick = i;
+    logo_refresh();
+}
+
+static void logo_refresh(void)
+{
+    /* preview */
+    lv_obj_clean(s_logo_prev);
+    lv_obj_add_flag(s_logo_msg, LV_OBJ_FLAG_HIDDEN);
+    if(s_logo_pick >= 0 && s_logo_pick < s_nlogos) {
+        char path[600], err[128];
+        snprintf(path, sizeof(path), "%s/%s", storage_logo_dir(), s_logo_names[s_logo_pick]);
+        img_t im;
+        if(img_load(path, 340, 84, &im, err, sizeof(err)) == 0 && logo_dsc_init(&s_clogo_dsc, &s_clogo_buf, &im) == 0) {
+            lv_obj_t * i = lv_image_create(s_logo_prev);
+            lv_image_set_src(i, &s_clogo_dsc);
+            lv_obj_center(i);
+            img_free(&im);
+        }
+        else {
+            char m[200];
+            snprintf(m, sizeof(m), "%s: %s", s_logo_names[s_logo_pick], err);
+            lv_label_set_text(s_logo_msg, m);
+            lv_obj_remove_flag(s_logo_msg, LV_OBJ_FLAG_HIDDEN);
+            s_logo_pick = -1;
+        }
+    }
+    if(s_logo_pick < 0) lv_obj_center(label(s_logo_prev, "No logo on the report", &f_sans_r14, 0x5A6578));
+
+    /* file list */
+    lv_obj_clean(s_logo_list);
+    for(int i = -1; i < s_nlogos; i++) {
+        int on = i == s_logo_pick;
+        lv_obj_t * b = lv_button_create(s_logo_list);
+        lv_obj_set_width(b, LV_PCT(100));
+        lv_obj_set_height(b, LV_SIZE_CONTENT);
+        lv_obj_set_style_shadow_width(b, 0, 0);
+        lv_obj_set_style_radius(b, 8, 0);
+        lv_obj_set_style_pad_all(b, 8, 0);
+        lv_obj_set_style_bg_color(b, C(on ? COL_SOFT : COL_SURFACE), 0);
+        lv_obj_set_style_bg_color(b, C(COL_SOFT), LV_STATE_PRESSED);
+        lv_obj_set_style_border_width(b, 1, 0);
+        lv_obj_set_style_border_color(b, C(on ? COL_ACCENT : COL_SURFACE), 0);
+        lv_obj_set_style_outline_color(b, C(COL_ACCENT), LV_STATE_FOCUS_KEY);
+        lv_obj_set_style_outline_width(b, 2, LV_STATE_FOCUS_KEY);
+        lv_obj_set_flex_flow(b, LV_FLEX_FLOW_ROW);
+        lv_obj_set_flex_align(b, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+        lv_obj_set_style_pad_column(b, 10, 0);
+        lv_obj_t * radio = box(b);
+        lv_obj_set_size(radio, 18, 18);
+        lv_obj_set_style_radius(radio, 99, 0);
+        lv_obj_set_style_border_width(radio, 2, 0);
+        lv_obj_set_style_border_color(radio, C(on ? COL_ACCENT : COL_FIELD), 0);
+        if(on) {
+            lv_obj_t * dot = box(radio);
+            lv_obj_set_size(dot, 8, 8);
+            lv_obj_set_style_radius(dot, 99, 0);
+            lv_obj_set_style_bg_opa(dot, LV_OPA_COVER, 0);
+            lv_obj_set_style_bg_color(dot, C(COL_ACCENT), 0);
+            lv_obj_center(dot);
+        }
+        lv_obj_t * cc = col(b, 0);
+        lv_obj_set_width(cc, LV_SIZE_CONTENT);
+        lv_obj_set_flex_grow(cc, 1);
+        if(i < 0) label(cc, "No logo", &f_sans_sb14, COL_INK);
+        else {
+            char t[LOGO_NAME_LEN + 16], info[160], path[600];
+            snprintf(t, sizeof(t), "logos/%s", s_logo_names[i]);
+            lv_obj_t * n = label(cc, t, &f_mono_m14, COL_INK);
+            lv_label_set_long_mode(n, LV_LABEL_LONG_DOT);
+            lv_obj_set_width(n, LV_PCT(100));
+            snprintf(path, sizeof(path), "%s/%s", storage_logo_dir(), s_logo_names[i]);
+            int w = 0, h = 0;
+            char err[128];
+            int okf = img_check_file(path, &w, &h, err, sizeof(err)) == 0;
+            if(okf) {
+                const char * e = strrchr(s_logo_names[i], '.');
+                snprintf(info, sizeof(info), "%s · %d × %d px", (e && strcasecmp(e, ".png") == 0) ? "PNG" : "JPG", w, h);
+            }
+            else str_copy(info, err, sizeof(info));
+            label(cc, info, &f_sans_r14, okf ? COL_MUTED : COL_RED);
+        }
+        lv_obj_add_event_cb(b, logo_pick_cb, LV_EVENT_CLICKED, (void *)(intptr_t)i);
+    }
+}
 
 static void org_save_cb(lv_event_t * e)
 {
     (void)e;
     get_text(s_ta_org, g.org_name, sizeof(g.org_name));
     get_text(s_ta_orgaddr, g.org_address, sizeof(g.org_address));
+    get_text(s_ta_orgcontact, g.org_contact, sizeof(g.org_contact));
+    if(s_logo_pick >= 0 && s_logo_pick < s_nlogos) str_copy(g.org_logo, s_logo_names[s_logo_pick], sizeof(g.org_logo));
+    else str_copy(g.org_logo, s_nlogos > 0 ? "-" : "", sizeof(g.org_logo));
     storage_save_org();
     modal_close();
+    build_step(s_step);
 }
 
 static void org_cb(lv_event_t * e)
 {
     (void)e;
     save_step1_fields();
-    lv_obj_t * c = modal_open("Your company (shown on the report)", 620);
-    s_ta_org = field(c, "Company name", g.org_name, "e.g. Example IT Services Ltd", 0);
-    s_ta_orgaddr = field(c, "Address", g.org_address, "Street, postcode, city", 0);
+    lv_obj_t * c = modal_open("Your company", s_compact ? 900 : 940);
+    lv_obj_t * sub = label(c, "Shown in the letterhead of every erasure report.", &f_sans_r14, COL_MUTED);
+    lv_obj_set_style_margin_top(sub, -10, 0);
+
+    lv_obj_t * cols = row(c, 26);
+    lv_obj_set_flex_align(cols, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START);
+    lv_obj_t * left = col(cols, 12);
+    lv_obj_set_width(left, LV_SIZE_CONTENT);
+    lv_obj_set_flex_grow(left, 1);
+    s_ta_org = field(left, "Company name", g.org_name, "e.g. Example IT Services Ltd", 0);
+    s_ta_orgaddr = field(left, "Address", g.org_address, "Street, postcode city", 0);
+    s_ta_orgcontact = field(left, "Phone / email", g.org_contact, "e.g. +44 161 555 0100 · service@example.com", 0);
     char where[512];
     snprintf(where, sizeof(where), "Saved in %s/company.txt%s", storage_dir(), storage_on_usb() ? "" : " (until reboot only – no WipeOS stick found)");
-    lv_obj_t * l = label(c, where, &f_sans_r14, COL_MUTED);
+    lv_obj_t * l = label(left, where, &f_sans_r14, COL_MUTED);
     lv_label_set_long_mode(l, LV_LABEL_LONG_WRAP);
     lv_obj_set_width(l, LV_PCT(100));
+
+    lv_obj_t * right = col(cols, 8);
+    lv_obj_set_width(right, LV_SIZE_CONTENT);
+    lv_obj_set_flex_grow(right, 1);
+    label(right, "Company logo", &f_sans_sb14, COL_INK);
+    s_logo_prev = box(right);
+    lv_obj_set_size(s_logo_prev, LV_PCT(100), 104);
+    lv_obj_set_style_bg_opa(s_logo_prev, LV_OPA_COVER, 0);
+    lv_obj_set_style_bg_color(s_logo_prev, C(0xFFFFFF), 0);
+    lv_obj_set_style_radius(s_logo_prev, 10, 0);
+    s_logo_msg = label(right, "", &f_sans_r14, COL_RED);
+    lv_label_set_long_mode(s_logo_msg, LV_LABEL_LONG_WRAP);
+    lv_obj_set_width(s_logo_msg, LV_PCT(100));
+    lv_obj_t * hint = label(right, "PNG or JPG in the wipeos/logos folder of the stick · max. 5 MB, 4000 × 4000 px · "
+                                   "best: wide PNG with transparent background, at least 600 px wide", &f_sans_r14, COL_MUTED);
+    lv_label_set_long_mode(hint, LV_LABEL_LONG_WRAP);
+    lv_obj_set_width(hint, LV_PCT(100));
+    s_logo_list = col(right, 2);
+    lv_obj_set_height(s_logo_list, LV_SIZE_CONTENT);
+    lv_obj_set_style_max_height(s_logo_list, s_compact ? 150 : 200, 0);
+    lv_obj_add_flag(s_logo_list, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_set_scroll_dir(s_logo_list, LV_DIR_VER);
+    lv_obj_t * rb = button(right, LV_SYMBOL_REFRESH "  Rescan stick", BTN_GHOST, logo_rescan_cb, NULL);
+    lv_obj_set_style_pad_ver(rb, 8, 0);
+    lv_obj_set_style_text_font(lv_obj_get_child(rb, 0), &f_sans_sb14, 0);
+
+    /* current selection */
+    s_nlogos = storage_list_images(s_logo_names, LOGO_MAX_FILES);
+    s_logo_pick = -1;
+    char path[600];
+    if(storage_logo_path(path, sizeof(path)) == 0) {
+        const char * base = strrchr(path, '/');
+        base = base ? base + 1 : path;
+        for(int i = 0; i < s_nlogos; i++)
+            if(strcmp(s_logo_names[i], base) == 0) s_logo_pick = i;
+    }
+    logo_refresh();
+
     lv_obj_t * b = row(c, 12);
-    lv_obj_set_flex_align(b, LV_FLEX_ALIGN_END, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+    lv_obj_set_style_border_side(b, LV_BORDER_SIDE_TOP, 0);
+    lv_obj_set_style_border_width(b, 1, 0);
+    lv_obj_set_style_border_color(b, C(COL_LINE), 0);
+    lv_obj_set_style_pad_top(b, 14, 0);
+    lv_obj_t * tip = label(b, "Tip: copy your logo to the stick on any PC as wipeos/logos/company-logo.png – it is used automatically.", &f_sans_r14, COL_MUTED);
+    lv_label_set_long_mode(tip, LV_LABEL_LONG_WRAP);
+    lv_obj_set_width(tip, LV_SIZE_CONTENT);
+    lv_obj_set_flex_grow(tip, 1);
     button(b, "Cancel", BTN_GHOST, modal_close_cb, NULL);
-    button(b, "Save", BTN_DARK, org_save_cb, NULL);
+    button(b, "Save", BTN_ACCENT, org_save_cb, NULL);
     lv_group_focus_obj(s_ta_org);
 }
 
@@ -1077,7 +1277,7 @@ void build_step2(void)
         lv_obj_t * top = row(c, 14);
         lv_obj_t * badge = label(top, d->bus, &f_mono_m14, d->is_boot ? COL_MUTED : 0xFFFFFF);
         lv_obj_set_style_bg_opa(badge, LV_OPA_COVER, 0);
-        lv_obj_set_style_bg_color(badge, C(d->is_boot ? COL_LINE : COL_INK), 0);
+        lv_obj_set_style_bg_color(badge, C(d->is_boot ? COL_LINE : COL_BTN), 0);
         lv_obj_set_style_radius(badge, 8, 0);
         lv_obj_set_style_pad_ver(badge, 8, 0);
         lv_obj_set_width(badge, 72);
@@ -1188,8 +1388,15 @@ static lv_obj_t * dropdown(lv_obj_t * parent, const char * caption, const char *
     lv_obj_set_style_radius(dd, 8, 0);
     lv_obj_set_style_pad_ver(dd, 9, 0);
     lv_obj_set_style_border_color(dd, C(COL_ACCENT), LV_STATE_FOCUSED);
+    lv_obj_set_style_bg_color(dd, C(COL_FIELD_BG), 0);
+    lv_obj_set_style_text_color(dd, C(COL_INK), 0);
+    lv_obj_set_style_bg_color(dd, C(COL_SURFACE), LV_STATE_DISABLED);
+    lv_obj_set_style_text_color(dd, C(0x6E84A3), LV_STATE_DISABLED);
     lv_obj_t * list = lv_dropdown_get_list(dd);
     lv_obj_set_style_text_font(list, &f_sans_r16, 0);
+    lv_obj_set_style_bg_color(list, C(COL_FIELD_BG), 0);
+    lv_obj_set_style_border_color(list, C(COL_FIELD), 0);
+    lv_obj_set_style_text_color(list, C(COL_INK), 0);
     lv_obj_set_style_bg_color(list, C(COL_ACCENT), LV_PART_SELECTED | LV_STATE_CHECKED);
     lv_obj_add_event_cb(dd, cb, LV_EVENT_VALUE_CHANGED, NULL);
     return dd;
@@ -1376,6 +1583,8 @@ void build_step3(void)
     lv_checkbox_set_text(cb, "Final blanking pass (zeros)");
     lv_obj_set_style_text_font(cb, &f_sans_r16, 0);
     lv_obj_set_style_text_color(cb, C(COL_INK), 0);
+    lv_obj_set_style_bg_color(cb, C(COL_FIELD_BG), LV_PART_INDICATOR);
+    lv_obj_set_style_border_color(cb, C(COL_FIELD), LV_PART_INDICATOR);
     lv_obj_set_style_bg_color(cb, C(COL_ACCENT), LV_PART_INDICATOR | LV_STATE_CHECKED);
     lv_obj_set_style_border_color(cb, C(COL_ACCENT), LV_PART_INDICATOR | LV_STATE_CHECKED);
     if(g.blank) lv_obj_add_state(cb, LV_STATE_CHECKED);
@@ -1456,7 +1665,7 @@ static void poll_cb(lv_timer_t * t)
             int ok = d->status == 0 && d->result == 0;
             lv_obj_set_style_text_color(s_row_status[i], C(d->status == 0 ? (ok ? COL_GREEN : COL_RED) : COL_ACCENT), 0);
             lv_bar_set_value(s_row_bar[i], (int)(d->percent * 10), LV_ANIM_OFF);
-            lv_obj_set_style_bg_color(s_row_bar[i], C(d->status == 0 ? (ok ? COL_GREEN : COL_RED) : (d->passtype == 2 ? 0x1864AB : COL_ACCENT)),
+            lv_obj_set_style_bg_color(s_row_bar[i], C(d->status == 0 ? (ok ? COL_GREEN : COL_RED) : (d->passtype == 2 ? 0x4DA3FF : COL_ACCENT)),
                                       LV_PART_INDICATOR);
             char spd[48], rest[48], info[160];
             if(d->status == 1 && d->throughput) snprintf(spd, sizeof(spd), "%llu MB/s", (unsigned long long)(d->throughput / 1000000));
@@ -1508,7 +1717,7 @@ static void dim_cb(lv_event_t * e)
     lv_obj_set_style_bg_color(s_dim, lv_color_black(), 0);
     lv_obj_add_flag(s_dim, LV_OBJ_FLAG_CLICKABLE);
     lv_obj_add_event_cb(s_dim, dim_off_cb, LV_EVENT_CLICKED, NULL);
-    lv_obj_t * l = label(s_dim, "Erasure continues · tap to wake", &f_sans_r14, 0x3A3D42);
+    lv_obj_t * l = label(s_dim, "Erasure continues · tap to wake", &f_sans_r14, 0x355780);
     lv_obj_align(l, LV_ALIGN_BOTTOM_MID, 0, -20);
 }
 
@@ -1614,7 +1823,7 @@ void build_step4(void)
     button(f, "Dim screen", BTN_GHOST, dim_cb, NULL);
     lv_obj_t * ab = button(f, "Cancel", BTN_GHOST, abort_cb, NULL);
     lv_obj_set_style_text_color(lv_obj_get_child(ab, 0), C(COL_RED), 0);
-    lv_obj_set_style_border_color(ab, C(0xE8B4B4), 0);
+    lv_obj_set_style_border_color(ab, C(0x7A2A3A), 0);
 
     if(!s_poll_timer) s_poll_timer = lv_timer_create(poll_cb, 1000, NULL);
 }
@@ -1688,7 +1897,7 @@ void build_step5(void)
     lv_obj_set_style_clip_corner(tbl, true, 0);
     lv_obj_t * th = row(tbl, 10);
     lv_obj_set_style_bg_opa(th, LV_OPA_COVER, 0);
-    lv_obj_set_style_bg_color(th, C(0xF7F6F3), 0);
+    lv_obj_set_style_bg_color(th, C(0x1A3358), 0);
     lv_obj_set_style_pad_all(th, 12, 0);
     lv_obj_set_style_pad_left(th, 20, 0);
     const char * hd[3] = {"Drive", "Duration", "Result"};
@@ -1728,8 +1937,8 @@ void build_step5(void)
         lv_obj_t * fl = label(rc, fn ? fn + 1 : g.report_path, &f_mono_m14, COL_MUTED);
         lv_label_set_long_mode(fl, LV_LABEL_LONG_WRAP);
         lv_obj_set_width(fl, LV_PCT(100));
-        lv_obj_t * ok_l = label(rc, storage_on_usb() ? LV_SYMBOL_OK "  Saved to the WipeOS stick in the “reports” folder"
-                                : LV_SYMBOL_WARNING "  No WipeOS stick found – report only in memory (/tmp/reports)",
+        lv_obj_t * ok_l = label(rc, storage_on_usb() ? LV_SYMBOL_OK "  Saved to the WipeOS stick in wipeos/reports"
+                                : LV_SYMBOL_WARNING "  No WipeOS stick found – report only in memory (/tmp/wipeos/reports)",
                                 &f_sans_sb14, storage_on_usb() ? COL_GREEN : COL_ACCENT);
         lv_label_set_long_mode(ok_l, LV_LABEL_LONG_WRAP);
         lv_obj_set_width(ok_l, LV_PCT(100));
@@ -1757,7 +1966,7 @@ void build_step5(void)
 void ui_init(void)
 {
     lv_display_t * disp = lv_display_get_default();
-    lv_theme_t * th = lv_theme_default_init(disp, C(COL_ACCENT), C(COL_INK), false, &f_sans_r16);
+    lv_theme_t * th = lv_theme_default_init(disp, C(COL_ACCENT), C(COL_EYEBROW), true, &f_sans_r16);
     lv_display_set_theme(disp, th);
     sysinfo_read_dmi(&g.dmi);
     g.method = METHOD_PRNG;
@@ -1806,6 +2015,7 @@ void ui_test_action(const char * cmd)
         }
         str_copy(g.org_name, "Example IT Services Ltd", sizeof(g.org_name));
         str_copy(g.org_address, "3 Works Road, Manchester M1 2AB", sizeof(g.org_address));
+        str_copy(g.org_contact, "+44 161 555 0100 · service@example-it.co.uk", sizeof(g.org_contact));
         str_copy(s_new_cust.name, "Northwind Accounting Ltd", sizeof(s_new_cust.name));
         str_copy(s_new_cust.contact, "Anna Berger", sizeof(s_new_cust.contact));
         str_copy(s_new_cust.street, "12 High Street", sizeof(s_new_cust.street));
@@ -1833,6 +2043,12 @@ void ui_test_action(const char * cmd)
     else if(strcmp(cmd, "close") == 0) modal_close();
     else if(strcmp(cmd, "start") == 0) confirm_start_cb(NULL);
     else if(strcmp(cmd, "tech") == 0) tech_add_cb(NULL);
+    else if(strcmp(cmd, "company") == 0) org_cb(NULL);
+    else if(strcmp(cmd, "save") == 0) org_save_cb(NULL);
+    else if(strncmp(cmd, "logo:", 5) == 0) {
+        s_logo_pick = atoi(cmd + 5);
+        logo_refresh();
+    }
     else if(strncmp(cmd, "step:", 5) == 0) build_step(atoi(cmd + 5));
     else if(strncmp(cmd, "method:", 7) == 0) {
         g.method = (method_id_t)atoi(cmd + 7);

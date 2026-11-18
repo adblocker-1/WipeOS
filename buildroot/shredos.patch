@@ -12,7 +12,7 @@ index eaf10a94..bff26237 100644
  # tty3 is reserved for the regular console
  4:3:respawn:/sbin/getty 38400 tty4 -n -l /usr/bin/smartdmt_launcher
 diff --git a/board/shredos/genimage.cfg b/board/shredos/genimage.cfg
-index 8242ab1b..fcf98da0 100644
+index 8242ab1b..89ce0a07 100644
 --- a/board/shredos/genimage.cfg
 +++ b/board/shredos/genimage.cfg
 @@ -1,6 +1,6 @@
@@ -23,17 +23,19 @@ index 8242ab1b..fcf98da0 100644
                  file boot/bzImage           { image = 'bzImage' }
                  file boot/grub/grub.cfg     { image = 'grub.cfg' }
                  file boot/version.txt       { image = 'version.txt' }
-@@ -12,10 +12,12 @@ image boot.vfat {
+@@ -12,10 +12,14 @@ image boot.vfat {
                  file EFI/BOOT/memtest.efi   { image = 'memtest.efi' }
                  file shredos.ico            { image = 'shredos.ico' }
                  file README.txt             { image = 'README.txt' }
 +                file GUIDE.txt              { image = 'GUIDE.txt' }
-+                file wipeos/company.txt     { image = 'company.txt' }
++                file wipeos/config/company.txt  { image = 'company.txt' }
++                file wipeos/logos/README.txt    { image = 'logos-README.txt' }
++                file wipeos/reports/README.txt  { image = 'reports-README.txt' }
                  file autorun.inf            { image = 'autorun.inf' }
          }
  
 -size = 119873792
-+size = 122523904
++size = 122597632
  }
  
  image shredos.img {
@@ -60,19 +62,21 @@ index 44449cd7..7e15338c 100644
  }
  
 diff --git a/board/shredos/make_img_file.sh b/board/shredos/make_img_file.sh
-index 4bbc817b..fcb89894 100755
+index 4bbc817b..0fe199f2 100755
 --- a/board/shredos/make_img_file.sh
 +++ b/board/shredos/make_img_file.sh
-@@ -17,6 +17,8 @@ cp "${BINARIES_DIR}/efi-part/EFI/BOOT/bootx64.efi"     "${BINARIES_DIR}/bootx64.
+@@ -17,6 +17,10 @@ cp "${BINARIES_DIR}/efi-part/EFI/BOOT/bootx64.efi"     "${BINARIES_DIR}/bootx64.
  
  cp "board/shredos/autorun.inf"             "${BINARIES_DIR}/autorun.inf"                  || exit 1
  cp "board/shredos/README.txt"              "${BINARIES_DIR}/README.txt"                   || exit 1
 +cp "board/shredos/GUIDE.txt"               "${BINARIES_DIR}/GUIDE.txt"                    || exit 1
 +cp "board/shredos/company.txt"             "${BINARIES_DIR}/company.txt"                  || exit 1
++cp "board/shredos/logos-README.txt"        "${BINARIES_DIR}/logos-README.txt"             || exit 1
++cp "board/shredos/reports-README.txt"      "${BINARIES_DIR}/reports-README.txt"           || exit 1
  cp "board/shredos/shredos.ico"             "${BINARIES_DIR}/shredos.ico"                  || exit 1
  
  # version.txt is used to help identify the (boot) USB disk
-@@ -55,7 +57,7 @@ genimage --rootpath="${TARGET_DIR}" \
+@@ -55,7 +59,7 @@ genimage --rootpath="${TARGET_DIR}" \
      --tmppath="${BUILD_DIR}/genimage.tmp"                                                 || exit 1
  
  SUFFIXIMG="${version}_$(date +%Y%m%d)"

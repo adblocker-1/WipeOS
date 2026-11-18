@@ -15,7 +15,7 @@ all: $(TARGET)
 $(TARGET): $(OBJS)
 	$(CC) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
-build/%.o: %.c lv_conf.h
+build/%.o: %.c lv_conf.h app/app.h
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) $(APP_CFLAGS) -c $< -o $@
 

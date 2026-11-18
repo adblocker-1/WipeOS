@@ -24,6 +24,7 @@ to the stick.
 - [User guide](#user-guide)
 - [Erasure methods](#erasure-methods)
 - [The erasure report](#the-erasure-report)
+- [Company logo](#company-logo)
 - [Files on the stick](#files-on-the-stick)
 - [Boot options](#boot-options)
 - [Important notes](#important-notes)
@@ -42,7 +43,8 @@ to the stick.
 - **All 12 nwipe erasure methods** and **all 8 random number generators**, with verification,
   rounds and an optional final blanking pass
 - **Live progress** per drive with speed, remaining time and error count
-- **PDF erasure report** per device, saved automatically on the stick
+- **PDF erasure report** per device in your company letterhead – **with your own company logo** –
+  saved automatically on the stick
 - **Mouse, touchscreen or keyboard** – US and German keyboard layouts, switchable in the UI
 - **Consecutive job and customer numbers** that survive reboots
 - The **classic nwipe interface** is still available (e.g. for ATA Secure Erase / NVMe Sanitize)
@@ -88,11 +90,14 @@ device are already filled in.
 - **Technician:** tap to select. Add new technicians with **"+ Add technician"** (name and ID).
 - **Device:** enter a **system name** (required, e.g. `Accounting-NB-07`) and optionally an
   asset tag and a note.
-- **Your company** (top right): your company name and address, shown on the report under
-  "Performed by". You only need to enter this once.
+- **Your company** (top right): company name, address, phone/email and your **company logo**.
+  They appear in the letterhead of every report. You only need to set this up once
+  (see [Company logo](#company-logo)).
 - **Keyboard** (bottom left): switches between the US and German layout.
 
 ![Job filled in](docs/images/03-job.png)
+
+![Your company with logo](docs/images/10-company.png)
 
 **"Continue to drives"** creates the job and assigns a job number (e.g. `WO-2026-0001`).
 
@@ -119,7 +124,7 @@ starts after **"Erase permanently"**.
 ### Step 4 – Erasing
 
 All drives are erased at the same time. The ring shows the overall progress, below it you see
-speed, remaining time and errors per drive. Orange means "writing", blue means "verifying",
+speed, remaining time and errors per drive. Pink means "writing", blue means "verifying",
 green means "done".
 
 ![Erasing](docs/images/07-erasing.png)
@@ -172,38 +177,79 @@ For RCMP TSSIT OPS-II nwipe never adds a blanking pass.
 
 ## The erasure report
 
-For every device **one PDF page** is saved in the `reports` folder on the stick, e.g.
-`WO-2026-0001_Accounting-NB-07_PF3XK2LM.pdf`. It contains:
+For every device a PDF is saved in `wipeos\reports` on the stick, e.g.
+`WO-2026-0001_Accounting-NB-07_PF3XK2LM.pdf`. It is laid out like a letter from your company:
 
-- Result (green: everything erased / red: errors or aborted)
+- **Letterhead:** your company logo (top left), company name, address and phone/email (top right)
+- **Title and stamp:** "Erasure report", job number and date, plus a stamp
+  (green "ERASED · VERIFIED" / red "NOT ERASED")
+- **Customer:** customer, customer no., address, contact, phone/email, reference
 - **Device:** system name, serial number, manufacturer, model, device type, asset tag, BIOS, UUID
 - **Erased drives:** model, serial number, type, capacity, duration, result
-- **Erasure:** start, finish, duration, method, passes and verification, random generator, HPA/DCO, errors, software
-- **Customer & technician:** customer, customer no., address, contact, technician, your company
-- Signature lines for the technician and the customer
+- **Erasure:** start, finish, duration, method, passes and verification, random generator,
+  HPA/DCO, errors, software, technician
+- Signature lines for the technician and the customer, small "Erased with WipeOS" note in the footer
 
-<img src="docs/images/09-report.png" alt="Erasure report" width="600">
+Without a company logo the company name is printed in the letterhead instead.
+
+<img src="docs/images/09-report.png" alt="Erasure report in company letterhead layout" width="600">
 
 The complete nwipe log (`…_nwipe.log`) is saved next to the PDF.
 
 ---
 
+## Company logo
+
+Your logo is printed at the top left of every erasure report.
+
+**How to add it**
+
+1. Plug the WipeOS stick into any PC and open the folder **`wipeos\logos`**.
+2. Copy your logo into it and name it **`company-logo.png`** (or `company-logo.jpg`) –
+   it is then used automatically.
+3. Alternatively copy any PNG/JPG into the folder and choose it in WipeOS under
+   **"Your company"** → **Company logo**. There you can also switch between several logos or
+   select **"No logo"**. **"Rescan stick"** reloads the list.
+
+**Format and size**
+
+| | |
+|---|---|
+| File format | **PNG** (transparent background recommended) or **JPG** |
+| Max. file size | **5 MB** |
+| Max. image size | **4000 × 4000 pixels** (min. 16 × 16) |
+| Recommended | Landscape logo, **at least 600 px wide**, e.g. **1200 × 300 px** |
+| Size on the report | Fitted into **70 × 18 mm** at the top left, aspect ratio is kept |
+| Location | `wipeos\logos\` on the stick (up to 12 files are listed) |
+
+Transparent borders around the logo are trimmed automatically. Very tall or square logos are
+scaled down to 18 mm height, so a wide logo looks best. Files that are too large or cannot be
+read are marked in red in the list and are not used.
+
+---
+
 ## Files on the stick
 
-The stick contains a normal FAT32 partition ("WIPEOS") that every PC can read:
+The stick contains a normal FAT32 partition ("WIPEOS") that every PC can read. All your data is
+in the `wipeos` folder, split into three subfolders:
 
 | Path | Contents |
 |---|---|
-| `reports\` | Erasure reports (PDF) and nwipe logs |
-| `wipeos\customers.csv` | Customer list, semicolon separated (Excel/LibreOffice) |
-| `wipeos\technicians.csv` | Technicians (`ID;Name`) |
-| `wipeos\company.txt` | Your company: line 1 name, line 2 address |
-| `wipeos\job_counter.txt` | Counter for job numbers (year and number) |
+| `wipeos\config\company.txt` | Your company: `name=`, `address=`, `contact=`, `logo=` |
+| `wipeos\config\customers.csv` | Customer list, semicolon separated (Excel/LibreOffice) |
+| `wipeos\config\technicians.csv` | Technicians (`ID;Name`) |
+| `wipeos\config\job_counter.txt` | Counter for job numbers (year and number) |
+| `wipeos\logos\` | Company logos (PNG/JPG), see [Company logo](#company-logo) |
+| `wipeos\reports\` | Erasure reports (PDF) and nwipe logs |
 | `GUIDE.txt` | Short guide |
 
 Customers and technicians can be prepared on a PC or imported from another customer list.
 The partition has about 15 MB free, enough for several hundred reports. Copy reports to your
 PC regularly.
+
+> **Updating from WipeOS 1.1:** if you copy your old `wipeos` and `reports` folders onto a new
+> stick, WipeOS moves the files into the new folders on the first start automatically
+> (customers, technicians, job counter and reports are kept).
 
 ---
 
@@ -281,19 +327,21 @@ SHREDOS_HEADLESS=1280x800 SHREDOS_TEST_SCRIPT="demo;shot:/tmp/step1.ppm" ./shred
 ```
 gui/                      Graphical interface (C, LVGL 9.2, framebuffer + evdev)
   app/ui.c                Screens of the five steps
-  app/report.c            PDF erasure report (PDFGen)
+  app/report.c            PDF erasure report in letterhead layout (PDFGen)
+  app/image.c             Company logo: PNG/JPG loading, checks and scaling (stb_image)
+  app/logo_data.c         WipeOS logo, generated by tools/gen_logo_data.py
   app/wipe.c              Methods, random generators, runs nwipe and reads progress
   app/sysinfo.c           Serial number (DMI) and drives (/sys/block)
-  app/storage.c           Customers, technicians and numbers on the stick
+  app/storage.c           Config, logos and reports folders on the stick
   app/input.c             Mouse, touch and keyboard (US and German layouts)
   lvgl/                   LVGL (git submodule)
 buildroot/                Additions to the ShredOS build
   shredos.patch           Changes to ShredOS (startup, boot menu, name, packages)
   package/shredos-gui/    Buildroot package of the interface
   package/nwipe/          nwipe patch: --status-file option for live progress
-  board/shredos/          Startup script, short guide, company.txt template
+  board/shredos/          Startup script, short guide, company.txt and folder templates
 docs/images/              Logo and the screenshots used in this guide
-tools/                    QEMU test script and QMP helper
+tools/                    QEMU test script, QMP helper, logo generator
 build.sh                  Builds the complete image
 ```
 
@@ -307,12 +355,13 @@ displays. At the end the interface creates the PDF report from it.
 
 ## Licenses and credits
 
-- **WipeOS interface** (`gui/app`, scripts): GNU GPL v3, see [LICENSE](LICENSE)
+- **WipeOS interface** (`gui/app`, scripts): GNU GPL v3
 - **nwipe patch** (`buildroot/package/nwipe`): GNU GPL v2, like nwipe
 - **[ShredOS](https://github.com/PartialVolume/shredos.x86_64)** by PartialVolume: GNU GPL v2
 - **[nwipe](https://github.com/martijnvanbrummelen/nwipe)** by Martijn van Brummelen and PartialVolume: GNU GPL v2
 - **[LVGL](https://lvgl.io)**: MIT
 - **PDFGen** by Andre Renaud: public domain
+- **[stb_image](https://github.com/nothings/stb)** by Sean Barrett: public domain
 - **IBM Plex** fonts: SIL Open Font License 1.1 (`gui/app/IBM-Plex-OFL-1.1.txt`)
 
 Many thanks to the developers of ShredOS and nwipe – without their work WipeOS would not exist.

@@ -104,10 +104,18 @@ typedef enum {
 
 #define PRNG_COUNT 8
 
+/* company logo limits */
+#define LOGO_NAME_LEN 64
+#define LOGO_MAX_BYTES (5 * 1024 * 1024)
+#define LOGO_MAX_PX 4000
+#define LOGO_MAX_FILES 12
+
 typedef struct {
     /* company performing the erasure */
     char org_name[128];
     char org_address[160];
+    char org_contact[128];  /* phone / email */
+    char org_logo[LOGO_NAME_LEN]; /* file in the wipeos/ folder, "" = auto, "-" = none */
 
     /* job */
     char order_no[32];
@@ -140,7 +148,9 @@ extern app_state_t g;
 
 /* storage.c */
 void storage_init(void);
-const char * storage_dir(void);      /* data folder (on the USB stick, otherwise /tmp) */
+const char * storage_dir(void);        /* config folder (wipeos/config on the USB stick, otherwise /tmp) */
+const char * storage_logo_dir(void);   /* wipeos/logos */
+const char * storage_report_dir(void); /* wipeos/reports */
 int storage_on_usb(void);
 int storage_load_customers(customer_t * list, int max);
 int storage_save_customer(const customer_t * c);    /* append */
@@ -151,6 +161,19 @@ void storage_next_order_no(char * out, size_t len); /* reserves the number */
 void storage_load_org(void);
 void storage_save_org(void);
 void storage_sync(void);
+int storage_list_images(char names[][LOGO_NAME_LEN], int max); /* PNG/JPG files in the data folder */
+int storage_logo_path(char * out, size_t len);                /* 0 = company logo file exists */
+
+/* image.c – company logo (PNG/JPG) */
+typedef struct {
+    uint8_t * rgba;
+    int w, h;
+} img_t;
+int img_check_file(const char * path, int * w, int * h, char * err, size_t errlen);
+int img_load(const char * path, int max_w, int max_h, img_t * out, char * err, size_t errlen);
+int img_wipeos_logo(int large, img_t * out);
+uint8_t * img_to_rgb_on_white(const img_t * im);
+void img_free(img_t * im);
 
 /* sysinfo.c */
 void sysinfo_read_dmi(dmi_t * d);

@@ -280,8 +280,8 @@ int wipe_poll(void)
             parse_status();
             /* copy the log next to the reports */
             char cmd[1024];
-            snprintf(cmd, sizeof(cmd), "mkdir -p '%s/../reports' && cp " LOG_FILE " '%s/../reports/%s_nwipe.log' 2>/dev/null",
-                     storage_dir(), storage_dir(), g.order_no);
+            snprintf(cmd, sizeof(cmd), "mkdir -p '%s' && cp " LOG_FILE " '%s/%s_nwipe.log' 2>/dev/null",
+                     storage_report_dir(), storage_report_dir(), g.order_no);
             if(system(cmd) != 0) { /* not critical */ }
             return 0;
         }
