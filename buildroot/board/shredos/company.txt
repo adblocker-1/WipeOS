@@ -1,3 +1,6 @@
-# Line 1: company name, line 2: address (shown on the erasure report)
-
-
+# WipeOS: your company, shown in the letterhead of every erasure report.
+# logo = image file in the wipeos/logos folder (PNG or JPG). Empty = company-logo.png / .jpg if present, "-" = no logo.
+name=
+address=
+contact=
+logo=

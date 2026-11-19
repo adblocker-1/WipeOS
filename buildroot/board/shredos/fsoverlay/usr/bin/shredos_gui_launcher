@@ -25,7 +25,7 @@ mkdir -p /mnt/shredos
 part=$(/usr/bin/find_shredos_boot_disc.sh 2>/dev/null)
 if [ -n "$part" ] && mount -o rw "$part" /mnt/shredos 2>/dev/null; then
 	export SHREDOS_DATA=/mnt/shredos
-	mkdir -p /mnt/shredos/reports /mnt/shredos/wipeos
+	mkdir -p /mnt/shredos/wipeos/config /mnt/shredos/wipeos/logos /mnt/shredos/wipeos/reports
 fi
 
 # keyboard layout: boot parameter wipeos_kbd=de, default us

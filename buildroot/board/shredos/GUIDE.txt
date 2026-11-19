@@ -14,21 +14,38 @@ Workflow
    technician and enter a system name for the device.
    Serial number, manufacturer and model are read from the BIOS.
 2. Select drives (the WipeOS stick itself is locked).
-3. Choose a method ("Automatic" is recommended) and confirm.
+3. Choose a method ("PRNG Stream" is recommended) and confirm.
 4. Erasing - do not switch the device off.
-5. Finished: the erasure report (PDF) is saved on this stick in the
-   "reports" folder, next to the nwipe log.
+5. Finished: the erasure report (PDF) is saved on this stick in
+   wipeos\reports, next to the nwipe log.
 
 Files on this stick
 -------------------
-reports\                 Erasure reports (PDF) and logs
-wipeos\customers.csv     Customer list (semicolon separated, opens in
-                         Excel/LibreOffice)
-wipeos\technicians.csv   Technicians (ID;Name)
-wipeos\company.txt       Your company: line 1 name, line 2 address
-                         (shown on the report, also editable in the UI
-                         under "Your company")
-wipeos\job_counter.txt   Counter for job numbers
+All your data is in the "wipeos" folder:
+
+wipeos\config\     Settings and lists (plain text, editable on a PC)
+  company.txt        Your company: name, address, phone/email, logo
+                     (also editable in WipeOS under "Your company")
+  customers.csv      Customer list (semicolon separated, opens in
+                     Excel/LibreOffice)
+  technicians.csv    Technicians (ID;Name)
+  job_counter.txt    Counter for job numbers
+wipeos\logos\      Company logos (PNG / JPG)
+wipeos\reports\    Erasure reports (PDF) and nwipe logs
+
+Sticks from WipeOS 1.1 are converted automatically on the first start
+(old files are moved into these folders).
+
+Company logo
+------------
+Copy your logo into wipeos\logos on any PC. Name it company-logo.png
+(or .jpg) and it is used automatically, or pick any PNG/JPG in that
+folder in WipeOS under "Your company".
+- Format: PNG (transparent background recommended) or JPG
+- Max. file size 5 MB, max. 4000 x 4000 pixels
+- Recommended: landscape logo, at least 600 px wide, e.g. 1200 x 300 px
+- On the report the logo is fitted into 70 x 18 mm (top left), keeping
+  its aspect ratio; transparent borders are trimmed automatically.
 
 Notes
 -----

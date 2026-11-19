@@ -1,7 +1,10 @@
 /*
  * Storage for customers, technicians, job numbers and company details.
  * Everything is kept as plain text files on the WipeOS USB stick
- * (folder wipeos/) so it survives reboots and can be edited on a PC.
+ * so it survives reboots and can be edited on a PC:
+ *   wipeos/config/   company.txt, customers.csv, technicians.csv, job_counter.txt
+ *   wipeos/logos/    company logos (PNG / JPG)
+ *   wipeos/reports/  erasure reports (PDF) and nwipe logs
  */
 #include "app.h"
 #include <stdio.h>
@@ -10,8 +13,11 @@
 #include <errno.h>
 #include <unistd.h>
 #include <sys/stat.h>
+#include <dirent.h>
+#include <strings.h>
 
-static char s_dir[400] = "/tmp/wipeos";
+static char s_base[400] = "/tmp/wipeos";
+static char s_dir[420], s_logo_dir[420], s_report_dir[420];
 static int s_on_usb = 0;
 
 void str_copy(char * dst, const char * src, size_t len)
@@ -45,21 +51,73 @@ static void mkdir_p(const char * path)
     mkdir(tmp, 0755);
 }
 
+/* move a file from the old (WipeOS 1.1) layout if the new one does not exist yet */
+static void migrate(const char * from_dir, const char * name, const char * to_dir)
+{
+    char src[900], dst[900];
+    struct stat st;
+    snprintf(src, sizeof(src), "%s/%s", from_dir, name);
+    snprintf(dst, sizeof(dst), "%s/%s", to_dir, name);
+    if(stat(src, &st) == 0 && S_ISREG(st.st_mode) && stat(dst, &st) != 0) rename(src, dst);
+}
+
+static int has_image_ext(const char * n);
+
+static void set_dirs(void)
+{
+    snprintf(s_dir, sizeof(s_dir), "%s/config", s_base);
+    snprintf(s_logo_dir, sizeof(s_logo_dir), "%s/logos", s_base);
+    snprintf(s_report_dir, sizeof(s_report_dir), "%s/reports", s_base);
+    mkdir_p(s_dir);
+    mkdir_p(s_logo_dir);
+    mkdir_p(s_report_dir);
+}
+
 void storage_init(void)
 {
     const char * base = getenv("SHREDOS_DATA");
     if(base && base[0]) {
-        snprintf(s_dir, sizeof(s_dir), "%s/wipeos", base);
-        mkdir_p(s_dir);
+        snprintf(s_base, sizeof(s_base), "%s/wipeos", base);
+        set_dirs();
         if(access(s_dir, W_OK) == 0) {
             s_on_usb = 1;
+            /* old layout: data files directly in wipeos/, reports in /reports */
+            const char * files[] = {"company.txt", "customers.csv", "technicians.csv", "job_counter.txt"};
+            for(int i = 0; i < 4; i++) migrate(s_base, files[i], s_dir);
+            DIR * d = opendir(s_base);
+            if(d) {
+                struct dirent * de;
+                while((de = readdir(d)))
+                    if(de->d_name[0] != '.' && has_image_ext(de->d_name)) migrate(s_base, de->d_name, s_logo_dir);
+                closedir(d);
+            }
+            char old[600];
+            snprintf(old, sizeof(old), "%s/reports", base);
+            d = opendir(old);
+            if(d) {
+                struct dirent * de;
+                while((de = readdir(d)))
+                    if(de->d_name[0] != '.') migrate(old, de->d_name, s_report_dir);
+                closedir(d);
+                rmdir(old); /* only succeeds when empty */
+            }
         }
         else {
-            str_copy(s_dir, "/tmp/wipeos", sizeof(s_dir));
+            str_copy(s_base, "/tmp/wipeos", sizeof(s_base));
         }
     }
-    mkdir_p(s_dir);
+    set_dirs();
     storage_load_org();
+}
+
+const char * storage_logo_dir(void)
+{
+    return s_logo_dir;
+}
+
+const char * storage_report_dir(void)
+{
+    return s_report_dir;
 }
 
 const char * storage_dir(void)
@@ -245,19 +303,34 @@ void storage_next_order_no(char * out, size_t len)
     snprintf(out, len, "WO-%d-%04d", year, no);
 }
 
+static int key_val(const char * line, const char * key, char * out, size_t len)
+{
+    size_t k = strlen(key);
+    if(strncmp(line, key, k) != 0 || line[k] != '=') return 0;
+    str_copy(out, line + k + 1, len);
+    str_trim(out);
+    return 1;
+}
+
 void storage_load_org(void)
 {
     char path[512];
     path_of(path, sizeof(path), "company.txt");
     g.org_name[0] = '\0';
     g.org_address[0] = '\0';
+    g.org_contact[0] = '\0';
+    g.org_logo[0] = '\0';
     FILE * fp = fopen(path, "r");
     if(!fp) return;
-    char line[256];
+    char line[320];
     int n = 0;
     while(fgets(line, sizeof(line), fp)) {
         str_trim(line);
         if(line[0] == '#' || line[0] == '\0') continue;
+        if(key_val(line, "name", g.org_name, sizeof(g.org_name)) || key_val(line, "address", g.org_address, sizeof(g.org_address)) ||
+           key_val(line, "contact", g.org_contact, sizeof(g.org_contact)) || key_val(line, "logo", g.org_logo, sizeof(g.org_logo)))
+            continue;
+        /* old format: line 1 name, line 2 address */
         if(n == 0) str_copy(g.org_name, line, sizeof(g.org_name));
         else if(n == 1) str_copy(g.org_address, line, sizeof(g.org_address));
         n++;
@@ -271,8 +344,55 @@ void storage_save_org(void)
     path_of(path, sizeof(path), "company.txt");
     FILE * fp = fopen(path, "w");
     if(!fp) return;
-    fprintf(fp, "# Line 1: company name, line 2: address (shown on the erasure report)\n");
-    fprintf(fp, "%s\n%s\n", g.org_name, g.org_address);
+    fprintf(fp, "# WipeOS: your company, shown in the letterhead of every erasure report.\n"
+                "# logo = image file in the wipeos/logos folder (PNG or JPG). Empty = company-logo.png / .jpg if present, \"-\" = no logo.\n");
+    fprintf(fp, "name=%s\naddress=%s\ncontact=%s\nlogo=%s\n", g.org_name, g.org_address, g.org_contact, g.org_logo);
     fclose(fp);
     storage_sync();
+}
+
+static int has_image_ext(const char * n)
+{
+    const char * e = strrchr(n, '.');
+    if(!e) return 0;
+    return strcasecmp(e, ".png") == 0 || strcasecmp(e, ".jpg") == 0 || strcasecmp(e, ".jpeg") == 0;
+}
+
+static int cmp_name(const void * a, const void * b)
+{
+    return strcasecmp((const char *)a, (const char *)b);
+}
+
+int storage_list_images(char names[][LOGO_NAME_LEN], int max)
+{
+    DIR * d = opendir(s_logo_dir);
+    if(!d) return 0;
+    int n = 0;
+    struct dirent * de;
+    while((de = readdir(d)) && n < max) {
+        if(de->d_name[0] == '.' || !has_image_ext(de->d_name) || strlen(de->d_name) >= LOGO_NAME_LEN) continue;
+        str_copy(names[n++], de->d_name, LOGO_NAME_LEN);
+    }
+    closedir(d);
+    qsort(names, n, LOGO_NAME_LEN, cmp_name);
+    return n;
+}
+
+int storage_logo_path(char * out, size_t len)
+{
+    out[0] = '\0';
+    if(strcmp(g.org_logo, "-") == 0) return -1;
+    struct stat st;
+    if(g.org_logo[0]) {
+        if(strchr(g.org_logo, '/')) return -1;
+        snprintf(out, len, "%s/%s", s_logo_dir, g.org_logo);
+        return stat(out, &st) == 0 ? 0 : -1;
+    }
+    const char * defaults[] = {"company-logo.png", "company-logo.jpg", "company-logo.jpeg"};
+    for(int i = 0; i < 3; i++) {
+        snprintf(out, len, "%s/%s", s_logo_dir, defaults[i]);
+        if(stat(out, &st) == 0) return 0;
+    }
+    out[0] = '\0';
+    return -1;
 }
