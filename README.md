@@ -242,6 +242,9 @@ in the `wipeos` folder, split into three subfolders:
 | `wipeos\logos\` | Company logos (PNG/JPG), see [Company logo](#company-logo) |
 | `wipeos\reports\` | Erasure reports (PDF) and nwipe logs |
 | `GUIDE.txt` | Short guide |
+| `README.txt` | What WipeOS is, link to this project |
+| `autorun.inf`, `wipeos.ico` | Name "WipeOS" and the WipeOS icon for the stick in Windows Explorer |
+| `boot\`, `EFI\` | Boot files – do not change |
 
 Customers and technicians can be prepared on a PC or imported from another customer list.
 The partition has about 15 MB free, enough for several hundred reports. Copy reports to your
@@ -360,6 +363,7 @@ displays. At the end the interface creates the PDF report from it.
 - **[ShredOS](https://github.com/PartialVolume/shredos.x86_64)** by PartialVolume: GNU GPL v2
 - **[nwipe](https://github.com/martijnvanbrummelen/nwipe)** by Martijn van Brummelen and PartialVolume: GNU GPL v2
 - **[LVGL](https://lvgl.io)**: MIT
+- **[GRUB](https://www.gnu.org/software/grub/)** boot loader (`EFI\BOOT`, `buildroot/board/shredos/bootia32.efi`): GNU GPL v3
 - **PDFGen** by Andre Renaud: public domain
 - **[stb_image](https://github.com/nothings/stb)** by Sean Barrett: public domain
 - **IBM Plex** fonts: SIL Open Font License 1.1 (`gui/app/IBM-Plex-OFL-1.1.txt`)

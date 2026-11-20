@@ -1,3 +1,24 @@
+diff --git a/board/shredos/autorun.inf b/board/shredos/autorun.inf
+index bc568106..1ae650e8 100644
+--- a/board/shredos/autorun.inf
++++ b/board/shredos/autorun.inf
+@@ -1,3 +1,3 @@
+-[autorun] 
+-icon=shredos.ico
+-label=ShredOS - DANGER
+\ No newline at end of file
++[autorun]
++icon=wipeos.ico
++label=WipeOS
+diff --git a/board/shredos/embed/grub.cfg b/board/shredos/embed/grub.cfg
+index e41461a5..8905edb4 100644
+--- a/board/shredos/embed/grub.cfg
++++ b/board/shredos/embed/grub.cfg
+@@ -1,3 +1,3 @@
+-search --file --set=root /boot/shredos.id
++search --file --set=root /boot/wipeos.id
+ set prefix=($root)/boot/grub
+ configfile $prefix/grub.cfg
 diff --git a/board/shredos/fsoverlay/etc/inittab b/board/shredos/fsoverlay/etc/inittab
 index eaf10a94..bff26237 100644
 --- a/board/shredos/fsoverlay/etc/inittab
@@ -12,10 +33,10 @@ index eaf10a94..bff26237 100644
  # tty3 is reserved for the regular console
  4:3:respawn:/sbin/getty 38400 tty4 -n -l /usr/bin/smartdmt_launcher
 diff --git a/board/shredos/genimage.cfg b/board/shredos/genimage.cfg
-index 8242ab1b..89ce0a07 100644
+index 8242ab1b..4cc46e47 100644
 --- a/board/shredos/genimage.cfg
 +++ b/board/shredos/genimage.cfg
-@@ -1,6 +1,6 @@
+@@ -1,21 +1,25 @@
  image boot.vfat {
          vfat {
 -                extraargs = "-F 32 -n SHREDOS"
@@ -23,10 +44,17 @@ index 8242ab1b..89ce0a07 100644
                  file boot/bzImage           { image = 'bzImage' }
                  file boot/grub/grub.cfg     { image = 'grub.cfg' }
                  file boot/version.txt       { image = 'version.txt' }
-@@ -12,10 +12,14 @@ image boot.vfat {
+-                file boot/shredos.id        { image = '/dev/null' }
++                file boot/wipeos.id         { image = '/dev/null' }
+                 file boot/memtest           { image = 'memtest.bin' }
+                 file EFI/BOOT/bootia32.efi  { image = 'bootia32.efi' }
+                 file EFI/BOOT/bootx64.efi   { image = 'bootx64.efi' }
+                 file EFI/BOOT/grub.cfg      { image = 'grub.cfg' }
                  file EFI/BOOT/memtest.efi   { image = 'memtest.efi' }
-                 file shredos.ico            { image = 'shredos.ico' }
-                 file README.txt             { image = 'README.txt' }
+-                file shredos.ico            { image = 'shredos.ico' }
+-                file README.txt             { image = 'README.txt' }
++                file wipeos.ico             { image = 'wipeos.ico' }
++                file README.txt             { image = 'README-wipeos.txt' }
 +                file GUIDE.txt              { image = 'GUIDE.txt' }
 +                file wipeos/config/company.txt  { image = 'company.txt' }
 +                file wipeos/logos/README.txt    { image = 'logos-README.txt' }
@@ -35,10 +63,32 @@ index 8242ab1b..89ce0a07 100644
          }
  
 -size = 119873792
-+size = 122597632
++size = 122605824
  }
  
  image shredos.img {
+diff --git a/board/shredos/genimage_i686.cfg b/board/shredos/genimage_i686.cfg
+index ab5df856..f27c748c 100644
+--- a/board/shredos/genimage_i686.cfg
++++ b/board/shredos/genimage_i686.cfg
+@@ -4,14 +4,14 @@ image boot.vfat {
+                 file boot/bzImage           { image = 'bzImage' }
+                 file boot/grub/grub.cfg     { image = 'grub.cfg' }
+                 file boot/version.txt       { image = 'version.txt' }
+-                file boot/shredos.id        { image = '/dev/null' }
++                file boot/wipeos.id         { image = '/dev/null' }
+                 file boot/memtest           { image = 'memtest.bin' }
+                 file EFI/BOOT/bootia32.efi  { image = 'bootia32.efi' }
+                 file EFI/BOOT/bootx64.efi   { image = 'bootx64.efi'}
+                 file EFI/BOOT/grub.cfg      { image = 'grub.cfg' }
+                 file EFI/BOOT/memtest.efi   { image = 'memtest.efi' }
+-                file shredos.ico            { image = 'shredos.ico' }
+-                file README.txt             { image = 'README.txt' }
++                file wipeos.ico             { image = 'wipeos.ico' }
++                file README.txt             { image = 'README-wipeos.txt' }
+                 file autorun.inf            { image = 'autorun.inf' }
+         }
+ 
 diff --git a/board/shredos/grub.cfg b/board/shredos/grub.cfg
 index 44449cd7..7e15338c 100644
 --- a/board/shredos/grub.cfg
@@ -62,20 +112,24 @@ index 44449cd7..7e15338c 100644
  }
  
 diff --git a/board/shredos/make_img_file.sh b/board/shredos/make_img_file.sh
-index 4bbc817b..0fe199f2 100755
+index 4bbc817b..a61c552e 100755
 --- a/board/shredos/make_img_file.sh
 +++ b/board/shredos/make_img_file.sh
-@@ -17,6 +17,10 @@ cp "${BINARIES_DIR}/efi-part/EFI/BOOT/bootx64.efi"     "${BINARIES_DIR}/bootx64.
+@@ -16,8 +16,12 @@ cp "${BINARIES_DIR}/efi-part/EFI/BOOT/bootia32.efi"    "${BINARIES_DIR}/bootia32
+ cp "${BINARIES_DIR}/efi-part/EFI/BOOT/bootx64.efi"     "${BINARIES_DIR}/bootx64.efi"      || exit 1
  
  cp "board/shredos/autorun.inf"             "${BINARIES_DIR}/autorun.inf"                  || exit 1
- cp "board/shredos/README.txt"              "${BINARIES_DIR}/README.txt"                   || exit 1
+-cp "board/shredos/README.txt"              "${BINARIES_DIR}/README.txt"                   || exit 1
+-cp "board/shredos/shredos.ico"             "${BINARIES_DIR}/shredos.ico"                  || exit 1
++cp "board/shredos/README-wipeos.txt"       "${BINARIES_DIR}/README-wipeos.txt"            || exit 1
 +cp "board/shredos/GUIDE.txt"               "${BINARIES_DIR}/GUIDE.txt"                    || exit 1
 +cp "board/shredos/company.txt"             "${BINARIES_DIR}/company.txt"                  || exit 1
 +cp "board/shredos/logos-README.txt"        "${BINARIES_DIR}/logos-README.txt"             || exit 1
 +cp "board/shredos/reports-README.txt"      "${BINARIES_DIR}/reports-README.txt"           || exit 1
- cp "board/shredos/shredos.ico"             "${BINARIES_DIR}/shredos.ico"                  || exit 1
++cp "board/shredos/wipeos.ico"              "${BINARIES_DIR}/wipeos.ico"                   || exit 1
  
  # version.txt is used to help identify the (boot) USB disk
+ cp "board/shredos/fsoverlay/etc/shredos/version.txt" "${BINARIES_DIR}/version.txt"        || exit 1
 @@ -55,7 +59,7 @@ genimage --rootpath="${TARGET_DIR}" \
      --tmppath="${BUILD_DIR}/genimage.tmp"                                                 || exit 1
  
@@ -99,7 +153,7 @@ index f81ff93c..b8285802 100755
  mv "${BINARIES_DIR}/rootfs.iso9660" "${FINAL_ISO_PATH}"             || exit 1
  
 diff --git a/configs/shredos_lite_defconfig b/configs/shredos_lite_defconfig
-index 69252722..07b014a7 100644
+index 69252722..539f5db3 100644
 --- a/configs/shredos_lite_defconfig
 +++ b/configs/shredos_lite_defconfig
 @@ -3,8 +3,8 @@ BR2_x86_nocona=y
@@ -113,6 +167,15 @@ index 69252722..07b014a7 100644
  BR2_INIT_SYSV=y
  BR2_ROOTFS_MERGED_USR=y
  BR2_SYSTEM_BIN_SH_BASH=y
+@@ -88,7 +88,7 @@ BR2_TARGET_ROOTFS_ISO9660_VOLUME_NAME="SHREDOS"
+ BR2_TARGET_ROOTFS_ISO9660_ISOLINUX_BOOT_MENU="board/shredos/iso/isolinux.cfg"
+ BR2_TARGET_ROOTFS_ISO9660_GRUB2_BOOT_MENU="board/shredos/iso/grub.cfg"
+ BR2_TARGET_ROOTFS_ISO9660_GRUB2_EFI_BOOT_MENU="board/shredos/iso/efigrub.cfg"
+-BR2_TARGET_ROOTFS_ISO9660_GRUB2_EFI_IDENT_FILE="/boot/shredos.id"
++BR2_TARGET_ROOTFS_ISO9660_GRUB2_EFI_IDENT_FILE="/boot/wipeos.id"
+ BR2_TARGET_ROOTFS_ISO9660_HYBRID=y
+ # BR2_TARGET_ROOTFS_TAR is not set
+ BR2_TARGET_GRUB2=y
 @@ -104,3 +104,4 @@ BR2_PACKAGE_HOST_E2FSPROGS=y
  BR2_PACKAGE_HOST_GENIMAGE=y
  BR2_PACKAGE_HOST_PYTHON3_BZIP2=y
