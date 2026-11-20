@@ -27,18 +27,18 @@ typedef struct {
 } method_def_t;
 
 static const method_def_t s_methods[METHOD_COUNT] = {
-    {"PRNG Stream", "random", 1, "Fills the device with a stream from the random number generator."},
-    {"Fill With Zeros", "zero", 1, "Fills the device with zeros (0x00)."},
-    {"Fill With Ones", "one", 1, "Fills the device with ones (0xFF)."},
-    {"RCMP TSSIT OPS-II", "ops2", 8, "Royal Canadian Mounted Police Technical Security Standard, OPS-II."},
-    {"DoD 5220.22-M (Short)", "dodshort", 3, "U.S. Department of Defense 5220.22-M short 3-pass wipe (passes 1, 2 & 7)."},
-    {"DoD 5220.22-M (Full)", "dod522022m", 7, "U.S. Department of Defense 5220.22-M full 7-pass wipe."},
-    {"Gutmann Wipe", "gutmann", 35, "Peter Gutmann's 35-pass method. Very slow, not needed for modern drives."},
-    {"HMG IS5 Enhanced", "is5enh", 3, "UK HMG IS5 (Enhanced) sanitisation method for protectively marked information."},
-    {"Schneier Wipe", "bruce7", 7, "Bruce Schneier's 7-pass mixed-pattern algorithm."},
-    {"BMB21-2019", "bmb", 6, "Chinese State Secrets Bureau BMB21-2019 technical requirement for data sanitisation."},
-    {"Verify Zeros", "verify_zero", 0, "Only reads the device and checks that it is filled with zeros (0x00)."},
-    {"Verify Ones", "verify_one", 0, "Only reads the device and checks that it is filled with ones (0xFF)."},
+    {"PRNG Stream", "random", 1, N_("Fills the device with a stream from the random number generator.")},
+    {"Fill With Zeros", "zero", 1, N_("Fills the device with zeros (0x00).")},
+    {"Fill With Ones", "one", 1, N_("Fills the device with ones (0xFF).")},
+    {"RCMP TSSIT OPS-II", "ops2", 8, N_("Royal Canadian Mounted Police Technical Security Standard, OPS-II.")},
+    {"DoD 5220.22-M (Short)", "dodshort", 3, N_("U.S. Department of Defense 5220.22-M short 3-pass wipe (passes 1, 2 & 7).")},
+    {"DoD 5220.22-M (Full)", "dod522022m", 7, N_("U.S. Department of Defense 5220.22-M full 7-pass wipe.")},
+    {"Gutmann Wipe", "gutmann", 35, N_("Peter Gutmann's 35-pass method. Very slow, not needed for modern drives.")},
+    {"HMG IS5 Enhanced", "is5enh", 3, N_("UK HMG IS5 (Enhanced) sanitisation method for protectively marked information.")},
+    {"Schneier Wipe", "bruce7", 7, N_("Bruce Schneier's 7-pass mixed-pattern algorithm.")},
+    {"BMB21-2019", "bmb", 6, N_("Chinese State Secrets Bureau BMB21-2019 technical requirement for data sanitisation.")},
+    {"Verify Zeros", "verify_zero", 0, N_("Only reads the device and checks that it is filled with zeros (0x00).")},
+    {"Verify Ones", "verify_one", 0, N_("Only reads the device and checks that it is filled with ones (0xFF).")},
 };
 
 typedef struct {
@@ -64,7 +64,7 @@ const char * method_label(method_id_t m)
 
 const char * method_desc(method_id_t m)
 {
-    return (m >= 0 && m < METHOD_COUNT) ? s_methods[m].desc : "";
+    return (m >= 0 && m < METHOD_COUNT) ? _(s_methods[m].desc) : "";
 }
 
 int method_pass_count(method_id_t m)
@@ -81,8 +81,8 @@ const char * method_passes(method_id_t m)
 {
     static char buf[32];
     int p = method_pass_count(m);
-    if(p == 0) return "read only";
-    snprintf(buf, sizeof(buf), "%d pass%s", p, p == 1 ? "" : "es");
+    if(p == 0) return _("read only");
+    snprintf(buf, sizeof(buf), _("Passes: %d"), p);
     return buf;
 }
 
@@ -100,12 +100,14 @@ static int effective_blank(void)
 void method_summary(char * out, size_t len)
 {
     if(method_is_verify_only(g.method)) {
-        snprintf(out, len, "%s (read only)", method_label(g.method));
+        snprintf(out, len, "%s (%s)", method_label(g.method), _("read only"));
         return;
     }
-    const char * v = g.verify == 2 ? "verify all passes" : (g.verify == 1 ? "verify last pass" : "no verification");
-    snprintf(out, len, "%s · %d round%s%s · %s", method_label(g.method), g.rounds, g.rounds == 1 ? "" : "s",
-             effective_blank() ? " + zero blanking" : "", v);
+    const char * v = g.verify == 2 ? _("verify all passes") : (g.verify == 1 ? _("verify last pass") : _("no verification"));
+    char r[64];
+    snprintf(r, sizeof(r), _("Rounds: %d"), g.rounds);
+    snprintf(out, len, "%s · %s%s%s · %s", method_label(g.method), r, effective_blank() ? " + " : "",
+             effective_blank() ? _("zero blanking") : "", v);
 }
 
 const char * method_short(method_id_t m)

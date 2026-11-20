@@ -318,6 +318,7 @@ int main(int argc, char ** argv)
 
     lv_init();
     storage_init();
+    locale_init();
 
     const char * headless = getenv("SHREDOS_HEADLESS");
     if(headless) return run_headless(headless);

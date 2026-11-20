@@ -33,7 +33,7 @@ index eaf10a94..bff26237 100644
  # tty3 is reserved for the regular console
  4:3:respawn:/sbin/getty 38400 tty4 -n -l /usr/bin/smartdmt_launcher
 diff --git a/board/shredos/genimage.cfg b/board/shredos/genimage.cfg
-index 8242ab1b..9268a5c9 100644
+index 8242ab1b..272e8ebd 100644
 --- a/board/shredos/genimage.cfg
 +++ b/board/shredos/genimage.cfg
 @@ -1,21 +1,25 @@
@@ -63,7 +63,7 @@ index 8242ab1b..9268a5c9 100644
          }
  
 -size = 119873792
-+size = 122773760
++size = 122925312
  }
  
  image shredos.img {

@@ -24,6 +24,7 @@ to the stick.
 - [User guide](#user-guide)
 - [Erasure methods](#erasure-methods)
 - [The erasure report](#the-erasure-report)
+- [Languages and keyboard layouts](#languages-and-keyboard-layouts)
 - [Company logo](#company-logo)
 - [Files on the stick](#files-on-the-stick)
 - [Boot options](#boot-options)
@@ -45,7 +46,11 @@ to the stick.
 - **Live progress** per drive with speed, remaining time and error count
 - **PDF erasure report** per device in your company letterhead – **with your own company logo** –
   saved automatically on the stick
-- **Keyboard, mouse, touchpad or touchscreen** – US and German keyboard layouts, switchable in the UI
+- **11 languages** for the interface and the report: English, Deutsch, Français, Español, Italiano,
+  Português, Nederlands, Polski, Türkçe, Русский, Українська – the report language can differ
+  from the interface language
+- **20 keyboard layouts** including dead keys (é, ñ, ü …) and Cyrillic
+- **Keyboard, mouse, touchpad or touchscreen**
 - **High-resolution displays:** QHD and 4K screens are enlarged automatically (zoom 100 % / 200 %)
 - **Consecutive job and customer numbers** that survive reboots
 - The **classic nwipe interface** is still available (e.g. for ATA Secure Erase / NVMe Sanitize)
@@ -94,8 +99,9 @@ device are already filled in.
 - **Your company** (top right): company name, address, phone/email and your **company logo**.
   They appear in the letterhead of every report. You only need to set this up once
   (see [Company logo](#company-logo)).
-- **Keyboard** (bottom left): switches between the US and German layout. You can start typing
-  right away – the first field is already selected. **Tab** moves to the next field.
+- **Language and keyboard** (bottom left): opens the language dialog, see
+  [Languages and keyboard layouts](#languages-and-keyboard-layouts). You can start typing right
+  away – the first field is already selected. **Tab** moves to the next field.
 - **Mouse:** USB mice, laptop touchpads (tap = click, two fingers = scroll) and touchscreens work.
 - **Zoom** (bottom left, only on high-resolution displays): switches between 100 % and 200 %.
   From 2560 × 1440 upwards WipeOS starts with 200 % automatically; the choice is saved on the stick.
@@ -203,6 +209,35 @@ The complete nwipe log (`…_nwipe.log`) is saved next to the PDF.
 
 ---
 
+## Languages and keyboard layouts
+
+On the first start WipeOS asks for the **language**, the **keyboard layout** and the **language
+of the erasure report**. The choice is saved on the stick; change it at any time with the
+language button at the bottom left of step 1. The dialog has a test field to try the layout.
+
+![Language and keyboard](docs/images/11-language.png)
+
+| | |
+|---|---|
+| Languages (interface and report) | English, Deutsch, Français, Español, Italiano, Português, Nederlands, Polski, Türkçe, Русский, Українська |
+| Report language | "Same as interface" or any of the languages – e.g. German interface, English report |
+| Keyboard layouts | English (US), English (UK), Deutsch, Schweiz (Deutsch), Suisse (Français), Français (AZERTY), Belgique / België, Español, Español (Latinoamérica), Italiano, Português, Português (Brasil), Polski, Türkçe (Q), Svenska / Suomi, Norsk, Dansk, Čeština, Русский, Українська |
+
+- **Accents:** dead keys work as usual (`´` then `e` gives `é`, `~` then `n` gives `ñ`).
+  **AltGr** gives the third character of a key (`@`, `€`, `{` …).
+- **Russian / Ukrainian:** **Alt + Shift** switches between Cyrillic and Latin letters
+  (for serial numbers, e-mail addresses …).
+- Names can contain any Latin (incl. Central European and Turkish) or Cyrillic letters; the
+  report embeds its own font, so they print correctly and the PDF text can be searched.
+- Method names (DoD 5220.22-M, Gutmann …) are proper names and are not translated.
+- Not available yet: languages with other scripts (Greek, Arabic, Hebrew, Chinese, Japanese,
+  Korean …).
+
+Translations are plain text files in `gui/i18n/` – corrections and new languages are welcome,
+see `gui/i18n/README.md`.
+
+---
+
 ## Company logo
 
 Your logo is printed at the top left of every erasure report.
@@ -244,7 +279,7 @@ in the `wipeos` folder, split into three subfolders:
 | `wipeos\config\customers.csv` | Customer list, semicolon separated (Excel/LibreOffice) |
 | `wipeos\config\technicians.csv` | Technicians (`ID;Name`) |
 | `wipeos\config\job_counter.txt` | Counter for job numbers (year and number) |
-| `wipeos\config\settings.txt` | Display zoom chosen in the interface |
+| `wipeos\config\settings.txt` | Language, keyboard layout, report language and zoom chosen in the interface |
 | `wipeos\logos\` | Company logos (PNG/JPG), see [Company logo](#company-logo) |
 | `wipeos\reports\` | Erasure reports (PDF) and nwipe logs |
 | `GUIDE.txt` | Short guide |
@@ -272,7 +307,8 @@ PC regularly.
 
 Additional parameters (press **e** in the boot menu and append them to the `linux` line):
 
-- `wipeos_kbd=de` – German keyboard layout as default (can also be switched in the UI)
+- `wipeos_lang=de` – language (`en de fr es it pt nl pl tr ru uk`), overrides the saved choice
+- `wipeos_kbd=de` – keyboard layout (`us gb de ch ch-fr fr be es latam it pt br pl tr se no dk cz ru ua`)
 - `wipeos_scale=1` / `wipeos_scale=2` – fixed zoom (100 % / 200 %) instead of the automatic choice
 - `wipeos_gui=0` – classic interface
 
@@ -289,6 +325,8 @@ The classic interface is also available via **"Classic nwipe"** in step 1 (botto
 - **Hardware erase (ATA Secure Erase / NVMe Sanitize)** is not yet offered in the new interface.
   It is available in the classic nwipe interface.
 - **AES-256-CTR** requires a CPU with AES-NI. If unsure, use ChaCha20 (default).
+- **Translations and keyboard layouts** were written without native-speaker review and tested
+  with simulated key presses, not with every physical keyboard. Please report mistakes.
 - **Time on the report** comes from the hardware clock of the erased device.
 - **Without the WipeOS stick partition** (e.g. booted from the ISO) data is only kept in memory.
   The interface shows a warning in that case.
@@ -343,7 +381,10 @@ gui/                      Graphical interface (C, LVGL 9.2, framebuffer + evdev)
   app/wipe.c              Methods, random generators, runs nwipe and reads progress
   app/sysinfo.c           Serial number (DMI) and drives (/sys/block)
   app/storage.c           Config, logos and reports folders on the stick
-  app/input.c             Keyboard (US and German layouts), mouse, touchpad, touchscreen
+  app/input.c             Keyboard layouts, dead keys, mouse, touchpad, touchscreen
+  app/i18n.c, lang_*.c    Translations (generated from gui/i18n/)
+  i18n/                   Translation files and tools
+  fonts/                  Fonts embedded in the PDF report
   app/main.c              Framebuffer output with zoom for high-resolution displays
   lvgl/                   LVGL (git submodule)
 buildroot/                Additions to the ShredOS build
@@ -373,7 +414,8 @@ displays. At the end the interface creates the PDF report from it.
 - **[LVGL](https://lvgl.io)**: MIT
 - **[GRUB](https://www.gnu.org/software/grub/)** boot loader (`EFI\BOOT`, `buildroot/board/shredos/bootia32.efi`): GNU GPL v3
 - **PDFGen** by Andre Renaud: public domain
-- **[stb_image](https://github.com/nothings/stb)** by Sean Barrett: public domain
-- **IBM Plex** fonts: SIL Open Font License 1.1 (`gui/app/IBM-Plex-OFL-1.1.txt`)
+- **[stb_image, stb_image_write](https://github.com/nothings/stb)** by Sean Barrett: public domain
+- **IBM Plex** fonts: SIL Open Font License 1.1 (`gui/app/IBM-Plex-OFL-1.1.txt`); the report
+  embeds a subset named "WipeOS Sans" (`gui/fonts/`)
 
 Many thanks to the developers of ShredOS and nwipe – without their work WipeOS would not exist.

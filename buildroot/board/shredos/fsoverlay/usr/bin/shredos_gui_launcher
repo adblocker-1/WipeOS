@@ -28,9 +28,12 @@ if [ -n "$part" ] && mount -o rw "$part" /mnt/shredos 2>/dev/null; then
 	mkdir -p /mnt/shredos/wipeos/config /mnt/shredos/wipeos/logos /mnt/shredos/wipeos/reports
 fi
 
-# keyboard layout: boot parameter wipeos_kbd=de, default us
-kbd=$(sed -n 's/.*wipeos_kbd=\([a-z]*\).*/\1/p' /proc/cmdline)
-export SHREDOS_KBD=${kbd:-us}
+# language and keyboard layout are chosen in the interface and saved on the stick.
+# Boot parameters override them: wipeos_lang=de  wipeos_kbd=de
+lang=$(sed -n 's/.*wipeos_lang=\([a-z]*\).*/\1/p' /proc/cmdline)
+[ -n "$lang" ] && export SHREDOS_LANG=$lang
+kbd=$(sed -n 's/.*wipeos_kbd=\([a-z-]*\).*/\1/p' /proc/cmdline)
+[ -n "$kbd" ] && export SHREDOS_KBD=$kbd
 # display zoom: boot parameter wipeos_scale=1|2|3, default automatic (or the zoom chosen in the UI)
 scale=$(sed -n 's/.*wipeos_scale=\([0-9]\).*/\1/p' /proc/cmdline)
 [ -n "$scale" ] && export SHREDOS_SCALE=$scale

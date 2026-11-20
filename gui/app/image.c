@@ -19,6 +19,10 @@
 #pragma GCC diagnostic ignored "-Wsign-compare"
 #endif
 #include "stb_image.h"
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#define STBI_WRITE_NO_STDIO
+#define STB_IMAGE_WRITE_STATIC
+#include "stb_image_write.h"
 #if defined(__GNUC__)
 #pragma GCC diagnostic pop
 #endif
@@ -75,24 +79,24 @@ int img_check_file(const char * path, int * w, int * h, char * err, size_t errle
 {
     struct stat st;
     if(stat(path, &st) != 0) {
-        snprintf(err, errlen, "File not found");
+        snprintf(err, errlen, _("File not found"));
         return -1;
     }
     if(st.st_size > LOGO_MAX_BYTES) {
-        snprintf(err, errlen, "File too large (%.1f MB, max. %d MB)", st.st_size / 1048576.0, LOGO_MAX_BYTES / 1048576);
+        snprintf(err, errlen, _("File too large (%.1f MB, max. %d MB)"), st.st_size / 1048576.0, LOGO_MAX_BYTES / 1048576);
         return -1;
     }
     int iw, ih, comp;
     if(!stbi_info(path, &iw, &ih, &comp)) {
-        snprintf(err, errlen, "Not a readable PNG or JPG image");
+        snprintf(err, errlen, _("Not a readable PNG or JPG image"));
         return -1;
     }
     if(iw > LOGO_MAX_PX || ih > LOGO_MAX_PX) {
-        snprintf(err, errlen, "Image too large (%d x %d px, max. %d x %d)", iw, ih, LOGO_MAX_PX, LOGO_MAX_PX);
+        snprintf(err, errlen, _("Image too large (%d x %d px, max. %d x %d)"), iw, ih, LOGO_MAX_PX, LOGO_MAX_PX);
         return -1;
     }
     if(iw < 16 || ih < 16) {
-        snprintf(err, errlen, "Image too small (%d x %d px)", iw, ih);
+        snprintf(err, errlen, _("Image too small (%d x %d px)"), iw, ih);
         return -1;
     }
     if(w) *w = iw;
@@ -107,7 +111,7 @@ int img_load(const char * path, int max_w, int max_h, img_t * out, char * err, s
     if(img_check_file(path, &iw, &ih, err, errlen) != 0) return -1;
     uint8_t * px = stbi_load(path, &iw, &ih, &comp, 4);
     if(!px) {
-        snprintf(err, errlen, "Could not decode image (%s)", stbi_failure_reason());
+        snprintf(err, errlen, _("Could not decode image (%s)"), stbi_failure_reason());
         return -1;
     }
     /* crop fully transparent borders so the logo sits flush */
@@ -122,14 +126,14 @@ int img_load(const char * path, int max_w, int max_h, img_t * out, char * err, s
             }
     if(cx1 < 0) {
         stbi_image_free(px);
-        snprintf(err, errlen, "Image is completely transparent");
+        snprintf(err, errlen, _("Image is completely transparent"));
         return -1;
     }
     int cw = cx1 - cx0 + 1, ch = cy1 - cy0 + 1;
     uint8_t * crop = malloc((size_t)cw * ch * 4);
     if(!crop) {
         stbi_image_free(px);
-        snprintf(err, errlen, "Out of memory");
+        snprintf(err, errlen, _("Out of memory"));
         return -1;
     }
     for(int y = 0; y < ch; y++) memcpy(crop + (size_t)y * cw * 4, px + ((size_t)(y + cy0) * iw + cx0) * 4, (size_t)cw * 4);
@@ -150,7 +154,7 @@ int img_load(const char * path, int max_w, int max_h, img_t * out, char * err, s
         uint8_t * s = downscale(crop, cw, ch, dw, dh);
         free(crop);
         if(!s) {
-            snprintf(err, errlen, "Out of memory");
+            snprintf(err, errlen, _("Out of memory"));
             return -1;
         }
         crop = s;
@@ -181,4 +185,40 @@ uint8_t * img_to_rgb_on_white(const img_t * im)
         for(int c = 0; c < 3; c++) rgb[i * 3 + c] = (uint8_t)((im->rgba[i * 4 + c] * a + 255 * (255 - a) + 127) / 255);
     }
     return rgb;
+}
+
+/* JPEG (on white background) for the PDF: much smaller than raw pixels */
+typedef struct {
+    uint8_t * data;
+    size_t len, cap;
+} membuf_t;
+
+static void mem_write(void * ctx, void * data, int size)
+{
+    membuf_t * m = ctx;
+    if(size <= 0 || !m) return;
+    if(m->len + (size_t)size > m->cap) {
+        size_t nc = (m->cap ? m->cap * 2 : 16384) + (size_t)size;
+        uint8_t * nd = realloc(m->data, nc);
+        if(!nd) return;
+        m->data = nd;
+        m->cap = nc;
+    }
+    memcpy(m->data + m->len, data, (size_t)size);
+    m->len += (size_t)size;
+}
+
+uint8_t * img_to_jpeg(const img_t * im, int quality, size_t * len)
+{
+    uint8_t * rgb = img_to_rgb_on_white(im);
+    if(!rgb) return NULL;
+    membuf_t m = {0};
+    int ok = stbi_write_jpg_to_func(mem_write, &m, im->w, im->h, 3, rgb, quality);
+    free(rgb);
+    if(!ok || !m.data) {
+        free(m.data);
+        return NULL;
+    }
+    *len = m.len;
+    return m.data;
 }

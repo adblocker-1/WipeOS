@@ -1,0 +1,232 @@
+1|Utwórz zlecenie
+2|Nie znaleziono pliku
+3|Plik jest za duży (%.1f MB, maks. %d MB)
+4|To nie jest czytelny obraz PNG ani JPG
+5|Obraz jest za duży (%d x %d px, maks. %d x %d)
+6|Obraz jest za mały (%d x %d px)
+7|Nie udało się odczytać obrazu (%s)
+8|Obraz jest całkowicie przezroczysty
+9|Brak pamięci
+10|Wymazano za pomocą WipeOS · dane urządzenia i dysków z BIOS-u (DMI) i oprogramowania dysków
+11|Strona %d z %d
+12|Raport z wymazania %s
+13|Nie udało się utworzyć pliku PDF
+14|Raport z weryfikacji
+15|Raport z wymazania
+16|Zlecenie %s · %s
+17|ZWERYFIKOWANO
+18|WYMAZANO · ZWERYFIKOWANO
+19|WYMAZANO
+20|WERYFIKACJA NIEUDANA
+21|NIE WYMAZANO
+22|Odczytane i sprawdzone dyski: %d z %d · błędy: %llu
+23|Wymazane i zweryfikowane odczytem dyski: %d z %d · błędy: %llu
+24|Wymazane dyski (bez weryfikacji): %d z %d · błędy: %llu
+25|Model
+26|Numer seryjny
+27|Typ
+28|Pojemność
+29|Czas trwania
+30|Wynik
+31|Raport z wymazania %s · ciąg dalszy
+32|Zweryfikowano
+33|Wymazano
+34|Przerwano
+35|Błąd
+36|Nie wymazano żadnego dysku.
+37|tylko odczyt
+38|Rundy: %d
+39|końcowe zerowanie
+40|zweryfikowano wszystkie przebiegi
+41|zweryfikowano ostatni przebieg
+42|bez weryfikacji
+43|nie dotyczy
+44|wykryto
+45|brak
+46|nie można sprawdzić
+47|%llu (zapis / synchronizacja / weryfikacja)
+48|Uwaga
+49|Technik
+50|Klient
+51|Zapis nie powiódł się: %s
+52|Wybierz dyski
+53|Wybierz metodę
+54|Wymazywanie
+55|Raport
+56|Alt + Shift przełącza między cyrylicą a alfabetem łacińskim.
+57|Taki jak interfejs
+58|Język i klawiatura
+59|Język
+60|Układ klawiatury
+61|Język raportu z wymazania
+62|Test klawiatury
+63|Pisz tutaj, aby wypróbować układ
+64|Anuluj
+65|Zapisz
+66|Następne pole
+67|Dalej
+68|Powiększenie
+69|Klasyczny nwipe
+70|ZLECENIE %s
+71|Urządzenie
+72|KROK %d Z 5
+73|Żaden klient nie pasuje do wyszukiwania.
+74|Brak klientów. Dodaj nowego klienta.
+75|Firma / nazwa *
+76|np. Przykład Sp. z o.o.
+77|Numer referencyjny
+78|np. numer zamówienia
+79|Osoba kontaktowa
+80|Telefon / e-mail
+81|opcjonalnie
+82|Ulica
+83|Kod pocztowy
+84|Miejscowość
+85|Zostanie zapisany jako klient %s.
+86|Szukaj nazwy, miejscowości lub nr klienta …
+87|Dodaj technika
+88|Imię i nazwisko *
+89|Imię i nazwisko
+90|Brak techników.
+91|Brak logo w raporcie
+92|Bez logo
+93|Twoja firma
+94|Widoczne w nagłówku każdego raportu z wymazania.
+95|Nazwa firmy
+96|np. Przykład Usługi IT Sp. z o.o.
+97|Adres
+98|Ulica, kod pocztowy miejscowość
+99|np. +48 22 123 45 67 · serwis@example.com
+100|Zapisano w %s/company.txt%s
+101| (tylko do ponownego uruchomienia – nie znaleziono pendrive'a WipeOS)
+102|Logo firmy
+103|PNG lub JPG w folderze wipeos/logos na pendrivie · maks. 5 MB, 4000 × 4000 px · najlepiej: szeroki PNG z przezroczystym tłem, co najmniej 600 px szerokości
+104|Odczytaj pendrive ponownie
+105|Wskazówka: skopiuj logo na pendrive na dowolnym komputerze jako wipeos/logos/company-logo.png – zostanie użyte automatycznie.
+106|Podaj nazwę klienta.
+107|Wybierz klienta.
+108|Wybierz lub dodaj technika.
+109|Podaj nazwę systemu dla urządzenia.
+110|Brak pendrive'a WipeOS: dane zachowane tylko do ponownego uruchomienia
+111|Skonfiguruj swoją firmę
+112|Nowy klient
+113|Istniejący
+114|+ Dodaj technika
+115|Producent
+116|Nazwa systemu *
+117|np. Księgowość-NB-07
+118|Nr inwentarzowy
+119|opcjonalnie, widoczne w raporcie
+120|Dalej do dysków
+121|Nie wybrano dysku
+122|Wybrano: %d · %s
+123|Znalezione dyski: %d
+124|Odśwież
+125|Zaznacz wszystkie
+126|Dysk SSD NVMe
+127|Dysk twardy (HDD)
+128|SSD / Flash
+129|Dysk startowy WipeOS · chroniony
+130|Zewnętrzny dysk USB
+131|Dysk wewnętrzny
+132|Nie znaleziono dysków. Sprawdź połączenia i dotknij „Odśwież”.
+133|Wstecz
+134|Dalej do metody
+135|Plan
+136|Szacowany czas łączny
+137|Wszystkie dane na wybranych dyskach zostaną trwale wymazane.
+138|Uruchomienie nie powiodło się
+139|Nie udało się uruchomić nwipe.
+140|Rozpocząć weryfikację?
+141|Wymazać trwale?
+142|Te dyski zostaną tylko odczytane i sprawdzone. Żadne dane nie zostaną zmienione.
+143|Te dyski zostaną całkowicie nadpisane. Tej operacji nie można cofnąć.
+144|Rozpocznij weryfikację
+145|Wymaż trwale
+146|Jak mają zostać wymazane dyski?
+147|Metoda
+148|Opcje (nieużywane w metodach tylko do odczytu)
+149|Opcje
+150|Generator losowy
+151|Weryfikacja
+152|Wyłączona\nOstatni przebieg\nWszystkie przebiegi
+153|Rundy
+154|Końcowy przebieg zerami
+155|Rozpocznij wymazywanie
+156|Zalecane
+157|Oczekiwanie …
+158|Weryfikacja
+159|Zapis zer
+160|Zapis
+161|%s · przebieg %d/%d · %.0f %%
+162|Prędkość %s     Pozostało %s     Błędy %llu
+163|obliczanie …
+164|ok. %s
+165|Wymazywanie trwa · dotknij, aby wybudzić
+166|Przerwać wymazywanie?
+167|Przerwane dyski są wymazane tylko częściowo. Przerwanie zostanie odnotowane w raporcie.
+168|Kontynuuj wymazywanie
+169|Trwa wymazywanie
+170|Nie wyłączaj urządzenia. Możesz wygasić ekran – wymazywanie trwa dalej.
+171|łącznie
+172|Pozostało
+173|Upłynęło
+174|Przewidywany koniec
+175|Błędy
+176|Uruchamianie …
+177|Wygaś ekran
+178|Wszystkie dyski zweryfikowane
+179|Wszystkie dyski bezpiecznie wymazane
+180|Weryfikacja nieudana
+181|Nie wszystkie dyski zostały wymazane
+182|%s · %s · %s · zweryfikowano %d z %d
+183|%s · %s · %s · wymazano %d z %d
+184|Dysk
+185|Zapisano na pendrivie WipeOS w wipeos/reports
+186|Nie znaleziono pendrive'a WipeOS – raport tylko w pamięci (/tmp/wipeos/reports)
+187|Nie udało się utworzyć raportu.
+188|Zlecenie %s · Klient %s
+189|Uruchom ponownie
+190|Wyłącz
+191|Następne zlecenie
+192|Wypełnia dysk strumieniem z generatora liczb losowych.
+193|Wypełnia dysk zerami (0x00).
+194|Wypełnia dysk jedynkami (0xFF).
+195|Techniczny standard bezpieczeństwa OPS-II Królewskiej Kanadyjskiej Policji Konnej.
+196|Departament Obrony USA 5220.22-M, wersja skrócona z 3 przebiegami (przebiegi 1, 2 i 7).
+197|Departament Obrony USA 5220.22-M, wersja pełna z 7 przebiegami.
+198|Metoda Petera Gutmanna z 35 przebiegami. Bardzo wolna, zbędna dla nowoczesnych dysków.
+199|Brytyjska metoda HMG IS5 (Enhanced) dla informacji niejawnych.
+200|Algorytm Bruce'a Schneiera z 7 przebiegami i mieszanymi wzorcami.
+201|Wymaganie techniczne BMB21-2019 chińskiego Biura Tajemnic Państwowych.
+202|Tylko odczytuje dysk i sprawdza, czy jest wypełniony zerami (0x00).
+203|Tylko odczytuje dysk i sprawdza, czy jest wypełniony jedynkami (0xFF).
+204|Przebiegi: %d
+205|weryfikacja wszystkich przebiegów
+206|weryfikacja ostatniego przebiegu
+207|bez weryfikacji
+208|Komputer stacjonarny
+209|Laptop
+210|Urządzenie przenośne
+211|All-in-one
+212|Serwer
+213|Tablet
+214|Komputer wbudowany
+215|Komputer
+216|nieznany
+217|Nieznany dysk
+218|Nr klienta
+219|Kontakt
+220|Nazwa systemu
+221|Typ urządzenia
+222|Początek
+223|Koniec
+224|Przebiegi
+225|HPA / DCO
+226|Oprogramowanie
+227|KLIENT
+228|URZĄDZENIE
+229|ZWERYFIKOWANE DYSKI
+230|WYMAZANE DYSKI
+231|WERYFIKACJA
+232|WYMAZYWANIE

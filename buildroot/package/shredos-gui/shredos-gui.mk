@@ -16,6 +16,8 @@ endef
 
 define SHREDOS_GUI_INSTALL_TARGET_CMDS
 	$(INSTALL) -D -m 0755 $(@D)/shredos-gui $(TARGET_DIR)/usr/bin/shredos-gui
+	$(INSTALL) -D -m 0644 $(@D)/fonts/WipeOS-Sans-Regular.ttf $(TARGET_DIR)/usr/share/wipeos/fonts/WipeOS-Sans-Regular.ttf
+	$(INSTALL) -D -m 0644 $(@D)/fonts/WipeOS-Sans-Bold.ttf $(TARGET_DIR)/usr/share/wipeos/fonts/WipeOS-Sans-Bold.ttf
 endef
 
 $(eval $(generic-package))

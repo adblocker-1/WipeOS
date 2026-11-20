@@ -1,0 +1,232 @@
+1|Crea intervento
+2|File non trovato
+3|File troppo grande (%.1f MB, max. %d MB)
+4|Immagine PNG o JPG non leggibile
+5|Immagine troppo grande (%d x %d px, max. %d x %d)
+6|Immagine troppo piccola (%d x %d px)
+7|Impossibile decodificare l'immagine (%s)
+8|L'immagine è completamente trasparente
+9|Memoria insufficiente
+10|Cancellato con WipeOS · dati del dispositivo e delle unità da BIOS (DMI) e firmware delle unità
+11|Pagina %d di %d
+12|Rapporto di cancellazione %s
+13|Impossibile creare il PDF
+14|Rapporto di verifica
+15|Rapporto di cancellazione
+16|Intervento %s · %s
+17|VERIFICATO
+18|CANCELLATO · VERIFICATO
+19|CANCELLATO
+20|VERIFICA NON RIUSCITA
+21|NON CANCELLATO
+22|%d di %d unità lette e controllate · %llu errori
+23|%d di %d unità cancellate e verificate con rilettura · %llu errori
+24|%d di %d unità cancellate (senza verifica) · %llu errori
+25|Modello
+26|Numero di serie
+27|Tipo
+28|Capacità
+29|Durata
+30|Risultato
+31|Rapporto di cancellazione %s · continua
+32|Verificato
+33|Cancellato
+34|Interrotto
+35|Non riuscito
+36|Nessuna unità cancellata.
+37|sola lettura
+38|Cicli: %d
+39|azzeramento finale
+40|tutti i passaggi verificati
+41|ultimo passaggio verificato
+42|non verificato
+43|non usato
+44|rilevato
+45|nessuno
+46|non verificabile
+47|%llu (scrittura / sincronizzazione / verifica)
+48|Nota
+49|Tecnico
+50|Cliente
+51|Salvataggio non riuscito: %s
+52|Seleziona unità
+53|Scegli metodo
+54|Cancella
+55|Rapporto
+56|Alt + Maiusc passa dalle lettere cirilliche a quelle latine e viceversa.
+57|Come l'interfaccia
+58|Lingua e tastiera
+59|Lingua
+60|Layout di tastiera
+61|Lingua del rapporto di cancellazione
+62|Prova tastiera
+63|Scrivi qui per provare il layout
+64|Annulla
+65|Salva
+66|Campo successivo
+67|Continua
+68|Zoom
+69|nwipe classico
+70|INTERVENTO %s
+71|Dispositivo
+72|PASSO %d DI 5
+73|Nessun cliente corrisponde alla ricerca.
+74|Ancora nessun cliente. Crea un nuovo cliente.
+75|Azienda / nome *
+76|ad es. Esempio S.r.l.
+77|Riferimento
+78|ad es. n. d'ordine
+79|Referente
+80|Telefono / e-mail
+81|facoltativo
+82|Via
+83|CAP
+84|Città
+85|Verrà salvato come cliente %s.
+86|Cerca nome, città o n. cliente …
+87|Aggiungi tecnico
+88|Nome *
+89|Nome e cognome
+90|Ancora nessun tecnico.
+91|Nessun logo sul rapporto
+92|Nessun logo
+93|La tua azienda
+94|Compare nell'intestazione di ogni rapporto di cancellazione.
+95|Nome dell'azienda
+96|ad es. Esempio Servizi IT S.r.l.
+97|Indirizzo
+98|Via, CAP città
+99|ad es. +39 02 1234567 · assistenza@example.com
+100|Salvato in %s/company.txt%s
+101| (solo fino al riavvio: chiavetta WipeOS non trovata)
+102|Logo aziendale
+103|PNG o JPG nella cartella wipeos/logos della chiavetta · max. 5 MB, 4000 × 4000 px · ideale: PNG largo con sfondo trasparente, largo almeno 600 px
+104|Rileggi chiavetta
+105|Suggerimento: copia il logo sulla chiavetta da un PC come wipeos/logos/company-logo.png e verrà usato automaticamente.
+106|Inserisci il nome del cliente.
+107|Seleziona un cliente.
+108|Seleziona o aggiungi un tecnico.
+109|Inserisci un nome di sistema per il dispositivo.
+110|Nessuna chiavetta WipeOS: dati conservati solo fino al riavvio
+111|Configura la tua azienda
+112|Nuovo cliente
+113|Esistente
+114|+ Aggiungi tecnico
+115|Produttore
+116|Nome del sistema *
+117|ad es. Contabilità-NB-07
+118|N. inventario
+119|facoltativo, compare nel rapporto
+120|Continua con le unità
+121|Nessuna unità selezionata
+122|Selezionate: %d · %s
+123|Unità trovate: %d
+124|Aggiorna
+125|Seleziona tutto
+126|SSD NVMe
+127|Disco rigido (HDD)
+128|SSD / Flash
+129|Unità di avvio WipeOS · protetta
+130|Unità USB esterna
+131|Unità interna
+132|Nessuna unità trovata. Controlla i collegamenti e tocca «Aggiorna».
+133|Indietro
+134|Continua con il metodo
+135|Piano
+136|Durata totale stimata
+137|Tutti i dati sulle unità selezionate verranno cancellati definitivamente.
+138|Avvio non riuscito
+139|Impossibile avviare nwipe.
+140|Avviare la verifica?
+141|Cancellare definitivamente?
+142|Queste unità verranno solo lette e controllate. Nessun dato verrà modificato.
+143|Queste unità verranno sovrascritte completamente. L'operazione non può essere annullata.
+144|Avvia verifica
+145|Cancella definitivamente
+146|Come devono essere cancellate le unità?
+147|Metodo
+148|Opzioni (non usate per i metodi di sola lettura)
+149|Opzioni
+150|Generatore casuale
+151|Verifica
+152|Disattivata\nUltimo passaggio\nTutti i passaggi
+153|Cicli
+154|Passaggio finale di zeri
+155|Avvia cancellazione
+156|Consigliato
+157|In attesa …
+158|Verifica
+159|Scrittura di zeri
+160|Scrittura
+161|%s · passaggio %d/%d · %.0f %%
+162|Velocità %s     Rimanente %s     Errori %llu
+163|calcolo in corso …
+164|circa %s
+165|La cancellazione continua · tocca per riattivare
+166|Interrompere la cancellazione?
+167|Le unità interrotte sono cancellate solo in parte. L'interruzione verrà riportata nel rapporto.
+168|Continua a cancellare
+169|Cancellazione in corso
+170|Non spegnere il dispositivo. Puoi oscurare lo schermo: la cancellazione continua.
+171|totale
+172|Rimanente
+173|Trascorso
+174|Fine prevista
+175|Errori
+176|Avvio …
+177|Oscura schermo
+178|Tutte le unità verificate
+179|Tutte le unità cancellate in modo sicuro
+180|Verifica non riuscita
+181|Non tutte le unità sono state cancellate
+182|%s · %s · %s · %d di %d verificate
+183|%s · %s · %s · %d di %d cancellate
+184|Unità
+185|Salvato sulla chiavetta WipeOS in wipeos/reports
+186|Chiavetta WipeOS non trovata: rapporto solo in memoria (/tmp/wipeos/reports)
+187|Impossibile creare il rapporto.
+188|Intervento %s · Cliente %s
+189|Riavvia
+190|Spegni
+191|Prossimo intervento
+192|Riempie l'unità con un flusso del generatore di numeri casuali.
+193|Riempie l'unità di zeri (0x00).
+194|Riempie l'unità di uno (0xFF).
+195|Standard tecnico di sicurezza OPS-II della Regia polizia a cavallo canadese.
+196|Dipartimento della Difesa USA 5220.22-M, versione breve a 3 passaggi (passaggi 1, 2 e 7).
+197|Dipartimento della Difesa USA 5220.22-M, versione completa a 7 passaggi.
+198|Metodo di Peter Gutmann a 35 passaggi. Molto lento, non necessario per le unità moderne.
+199|Metodo britannico HMG IS5 (Enhanced) per informazioni classificate.
+200|Algoritmo di Bruce Schneier a 7 passaggi con schemi misti.
+201|Requisito tecnico BMB21-2019 dell'Ufficio cinese per i segreti di Stato.
+202|Legge soltanto l'unità e controlla che sia piena di zeri (0x00).
+203|Legge soltanto l'unità e controlla che sia piena di uno (0xFF).
+204|Passaggi: %d
+205|verifica di tutti i passaggi
+206|verifica dell'ultimo passaggio
+207|senza verifica
+208|Desktop
+209|Portatile
+210|Palmare
+211|All-in-one
+212|Server
+213|Tablet
+214|PC embedded
+215|Computer
+216|sconosciuto
+217|Unità sconosciuta
+218|N. cliente
+219|Referente
+220|Nome del sistema
+221|Tipo di dispositivo
+222|Inizio
+223|Fine
+224|Passaggi
+225|HPA / DCO
+226|Software
+227|CLIENTE
+228|DISPOSITIVO
+229|UNITÀ VERIFICATE
+230|UNITÀ CANCELLATE
+231|VERIFICA
+232|CANCELLAZIONE

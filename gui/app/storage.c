@@ -312,28 +312,75 @@ static int key_val(const char * line, const char * key, char * out, size_t len)
     return 1;
 }
 
-int storage_get_scale(void)
+/* settings.txt: scale, language, keyboard layout, report language */
+static struct {
+    int loaded;
+    int scale;
+    char lang[8], kbd[12], rlang[8];
+} s_set;
+
+static void settings_load(void)
 {
-    char path[512], line[64];
-    int sc = 0;
+    char path[512], line[96];
+    memset(&s_set, 0, sizeof(s_set));
+    s_set.loaded = 1;
     path_of(path, sizeof(path), "settings.txt");
     FILE * fp = fopen(path, "r");
-    if(!fp) return 0;
-    while(fgets(line, sizeof(line), fp))
-        if(strncmp(line, "scale=", 6) == 0) sc = atoi(line + 6);
+    if(!fp) return;
+    while(fgets(line, sizeof(line), fp)) {
+        str_trim(line);
+        if(strncmp(line, "scale=", 6) == 0) s_set.scale = atoi(line + 6);
+        else if(strncmp(line, "language=", 9) == 0) str_copy(s_set.lang, line + 9, sizeof(s_set.lang));
+        else if(strncmp(line, "keyboard=", 9) == 0) str_copy(s_set.kbd, line + 9, sizeof(s_set.kbd));
+        else if(strncmp(line, "report_language=", 16) == 0) str_copy(s_set.rlang, line + 16, sizeof(s_set.rlang));
+    }
     fclose(fp);
-    return sc;
 }
 
-void storage_set_scale(int sc)
+static void settings_save(void)
 {
     char path[512];
     path_of(path, sizeof(path), "settings.txt");
     FILE * fp = fopen(path, "w");
     if(!fp) return;
-    fprintf(fp, "# WipeOS display settings. scale: 1 = 100 %%, 2 = 200 %%, 3 = 300 %%, 0 = automatic\nscale=%d\n", sc);
+    fprintf(fp, "# WipeOS settings (changed in the interface).\n"
+                "# scale: 1 = 100 %%, 2 = 200 %%, 3 = 300 %%, 0 = automatic\n"
+                "# language / report_language: en de fr es it pt nl pl tr ru uk (report_language empty = same as language)\n"
+                "# keyboard: us gb de ch ch-fr fr be es latam it pt br pl tr se no dk cz ru ua\n");
+    fprintf(fp, "scale=%d\nlanguage=%s\nkeyboard=%s\nreport_language=%s\n", s_set.scale, s_set.lang, s_set.kbd, s_set.rlang);
     fclose(fp);
     storage_sync();
+}
+
+int storage_get_scale(void)
+{
+    if(!s_set.loaded) settings_load();
+    return s_set.scale;
+}
+
+void storage_set_scale(int sc)
+{
+    if(!s_set.loaded) settings_load();
+    s_set.scale = sc;
+    settings_save();
+}
+
+const char * storage_get_setting(const char * key)
+{
+    if(!s_set.loaded) settings_load();
+    if(strcmp(key, "language") == 0) return s_set.lang;
+    if(strcmp(key, "keyboard") == 0) return s_set.kbd;
+    if(strcmp(key, "report_language") == 0) return s_set.rlang;
+    return "";
+}
+
+void storage_set_locale(const char * lang, const char * kbd, const char * rlang)
+{
+    if(!s_set.loaded) settings_load();
+    str_copy(s_set.lang, lang, sizeof(s_set.lang));
+    str_copy(s_set.kbd, kbd, sizeof(s_set.kbd));
+    str_copy(s_set.rlang, rlang, sizeof(s_set.rlang));
+    settings_save();
 }
 
 void storage_load_org(void)

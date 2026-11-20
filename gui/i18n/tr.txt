@@ -1,0 +1,232 @@
+1|İş oluştur
+2|Dosya bulunamadı
+3|Dosya çok büyük (%.1f MB, en fazla %d MB)
+4|Okunabilir bir PNG veya JPG görseli değil
+5|Görsel çok büyük (%d x %d px, en fazla %d x %d)
+6|Görsel çok küçük (%d x %d px)
+7|Görsel çözümlenemedi (%s)
+8|Görsel tamamen saydam
+9|Bellek yetersiz
+10|WipeOS ile silindi · cihaz ve sürücü bilgileri BIOS (DMI) ve sürücü yazılımından alınmıştır
+11|Sayfa %d / %d
+12|Silme raporu %s
+13|PDF oluşturulamadı
+14|Doğrulama raporu
+15|Silme raporu
+16|İş %s · %s
+17|DOĞRULANDI
+18|SİLİNDİ · DOĞRULANDI
+19|SİLİNDİ
+20|DOĞRULAMA BAŞARISIZ
+21|SİLİNMEDİ
+22|Okunup denetlenen sürücü: %d / %d · hata: %llu
+23|Silinip geri okunarak doğrulanan sürücü: %d / %d · hata: %llu
+24|Silinen sürücü (doğrulama yok): %d / %d · hata: %llu
+25|Model
+26|Seri numarası
+27|Tür
+28|Kapasite
+29|Süre
+30|Sonuç
+31|Silme raporu %s · devam
+32|Doğrulandı
+33|Silindi
+34|İptal edildi
+35|Başarısız
+36|Hiçbir sürücü silinmedi.
+37|salt okuma
+38|Tur: %d
+39|sonda sıfırlama
+40|tüm geçişler doğrulandı
+41|son geçiş doğrulandı
+42|doğrulanmadı
+43|kullanılmadı
+44|bulundu
+45|yok
+46|denetlenemiyor
+47|%llu (yazma / eşitleme / doğrulama)
+48|Not
+49|Teknisyen
+50|Müşteri
+51|Kaydedilemedi: %s
+52|Sürücüleri seç
+53|Yöntemi seç
+54|Silme
+55|Rapor
+56|Alt + Shift, Kiril ve Latin harfleri arasında geçiş yapar.
+57|Arayüzle aynı
+58|Dil ve klavye
+59|Dil
+60|Klavye düzeni
+61|Silme raporunun dili
+62|Klavye testi
+63|Düzeni denemek için buraya yazın
+64|İptal
+65|Kaydet
+66|Sonraki alan
+67|Devam
+68|Yakınlaştırma
+69|Klasik nwipe
+70|İŞ %s
+71|Cihaz
+72|ADIM %d / 5
+73|Aramayla eşleşen müşteri yok.
+74|Henüz müşteri yok. Yeni bir müşteri oluşturun.
+75|Şirket / ad *
+76|örn. Örnek Ltd. Şti.
+77|Referans
+78|örn. sipariş numarası
+79|İlgili kişi
+80|Telefon / e-posta
+81|isteğe bağlı
+82|Sokak
+83|Posta kodu
+84|Şehir
+85|%s numaralı müşteri olarak kaydedilecek.
+86|Ad, şehir veya müşteri no. ara …
+87|Teknisyen ekle
+88|Ad *
+89|Ad ve soyad
+90|Henüz teknisyen yok.
+91|Raporda logo yok
+92|Logo yok
+93|Şirketiniz
+94|Her silme raporunun antetinde görünür.
+95|Şirket adı
+96|örn. Örnek BT Hizmetleri Ltd. Şti.
+97|Adres
+98|Sokak, posta kodu şehir
+99|örn. +90 212 123 45 67 · servis@example.com
+100|%s/company.txt dosyasına kaydedildi%s
+101| (yalnızca yeniden başlatmaya kadar – WipeOS belleği bulunamadı)
+102|Şirket logosu
+103|Bellekteki wipeos/logos klasöründe PNG veya JPG · en fazla 5 MB, 4000 × 4000 px · en iyisi: saydam arka planlı, en az 600 px genişliğinde yatay PNG
+104|Belleği yeniden tara
+105|İpucu: logonuzu herhangi bir bilgisayarda belleğe wipeos/logos/company-logo.png adıyla kopyalayın; otomatik olarak kullanılır.
+106|Lütfen müşteri adını girin.
+107|Lütfen bir müşteri seçin.
+108|Lütfen bir teknisyen seçin veya ekleyin.
+109|Lütfen cihaz için bir sistem adı girin.
+110|WipeOS belleği yok: veriler yalnızca yeniden başlatmaya kadar saklanır
+111|Şirketinizi ayarlayın
+112|Yeni müşteri
+113|Kayıtlı
+114|+ Teknisyen ekle
+115|Üretici
+116|Sistem adı *
+117|örn. Muhasebe-NB-07
+118|Demirbaş no.
+119|isteğe bağlı, raporda görünür
+120|Sürücülere devam
+121|Sürücü seçilmedi
+122|Seçilen: %d · %s
+123|Bulunan sürücü: %d
+124|Yeniden tara
+125|Tümünü seç
+126|NVMe SSD
+127|Sabit disk (HDD)
+128|SSD / Flash
+129|WipeOS önyükleme sürücüsü · korumalı
+130|Harici USB sürücü
+131|Dahili sürücü
+132|Sürücü bulunamadı. Bağlantıları denetleyin ve “Yeniden tara”ya dokunun.
+133|Geri
+134|Yönteme devam
+135|Plan
+136|Tahmini toplam süre
+137|Seçilen sürücülerdeki tüm veriler kalıcı olarak silinecek.
+138|Başlatılamadı
+139|nwipe başlatılamadı.
+140|Doğrulama başlatılsın mı?
+141|Kalıcı olarak silinsin mi?
+142|Bu sürücüler yalnızca okunup denetlenecek. Hiçbir veri değiştirilmeyecek.
+143|Bu sürücülerin üzerine tamamen yazılacak. Bu işlem geri alınamaz.
+144|Doğrulamayı başlat
+145|Kalıcı olarak sil
+146|Sürücüler nasıl silinsin?
+147|Yöntem
+148|Seçenekler (salt okuma yöntemlerinde kullanılmaz)
+149|Seçenekler
+150|Rastgele sayı üreteci
+151|Doğrulama
+152|Kapalı\nSon geçiş\nTüm geçişler
+153|Tur
+154|Sonda sıfırlarla yazma
+155|Silmeyi başlat
+156|Önerilen
+157|Bekliyor …
+158|Doğrulanıyor
+159|Sıfır yazılıyor
+160|Yazılıyor
+161|%s · geçiş %d/%d · %%%.0f
+162|Hız %s     Kalan %s     Hata %llu
+163|hesaplanıyor …
+164|yaklaşık %s
+165|Silme sürüyor · uyandırmak için dokunun
+166|Silme iptal edilsin mi?
+167|İptal edilen sürücüler yalnızca kısmen silinmiş olur. İptal rapora işlenir.
+168|Silmeye devam et
+169|Siliniyor
+170|Cihazı kapatmayın. Ekranı karartabilirsiniz; silme devam eder.
+171|toplam
+172|Kalan
+173|Geçen
+174|Tahmini bitiş
+175|Hata
+176|Başlatılıyor …
+177|Ekranı karart
+178|Tüm sürücüler doğrulandı
+179|Tüm sürücüler güvenli biçimde silindi
+180|Doğrulama başarısız
+181|Tüm sürücüler silinemedi
+182|%s · %s · %s · %d / %d doğrulandı
+183|%s · %s · %s · %d / %d silindi
+184|Sürücü
+185|WipeOS belleğinde wipeos/reports klasörüne kaydedildi
+186|WipeOS belleği bulunamadı – rapor yalnızca bellekte (/tmp/wipeos/reports)
+187|Rapor oluşturulamadı.
+188|İş %s · Müşteri %s
+189|Yeniden başlat
+190|Kapat
+191|Sonraki iş
+192|Sürücüyü rastgele sayı üretecinden gelen verilerle doldurur.
+193|Sürücüyü sıfırlarla (0x00) doldurur.
+194|Sürücüyü birlerle (0xFF) doldurur.
+195|Kanada Kraliyet Atlı Polisi OPS-II teknik güvenlik standardı.
+196|ABD Savunma Bakanlığı 5220.22-M, 3 geçişli kısa sürüm (1., 2. ve 7. geçişler).
+197|ABD Savunma Bakanlığı 5220.22-M, 7 geçişli tam sürüm.
+198|Peter Gutmann'ın 35 geçişli yöntemi. Çok yavaştır, modern sürücülerde gerekmez.
+199|Gizlilik dereceli bilgiler için Birleşik Krallık HMG IS5 (Enhanced) yöntemi.
+200|Bruce Schneier'in 7 geçişli karışık desenli algoritması.
+201|Çin Devlet Sırları Bürosu BMB21-2019 teknik gerekliliği.
+202|Sürücüyü yalnızca okur ve sıfırlarla (0x00) dolu olup olmadığını denetler.
+203|Sürücüyü yalnızca okur ve birlerle (0xFF) dolu olup olmadığını denetler.
+204|Geçiş: %d
+205|tüm geçişleri doğrula
+206|son geçişi doğrula
+207|doğrulama yok
+208|Masaüstü
+209|Dizüstü
+210|El bilgisayarı
+211|Hepsi bir arada
+212|Sunucu
+213|Tablet
+214|Gömülü bilgisayar
+215|Bilgisayar
+216|bilinmiyor
+217|Bilinmeyen sürücü
+218|Müşteri no.
+219|İlgili kişi
+220|Sistem adı
+221|Cihaz türü
+222|Başlangıç
+223|Bitiş
+224|Geçişler
+225|HPA / DCO
+226|Yazılım
+227|MÜŞTERİ
+228|CİHAZ
+229|DOĞRULANAN SÜRÜCÜLER
+230|SİLİNEN SÜRÜCÜLER
+231|DOĞRULAMA
+232|SİLME
