@@ -53,63 +53,268 @@ static int s_wheel;
 static uint32_t s_tap_until = 0;   /* tap-to-click: report "pressed" until this tick */
 static uint32_t s_last_key = 0;    /* for "disable tap while typing" */
 static int s_has_kbd = 0, s_has_mouse = 0;
-static int s_shift = 0, s_altgr = 0, s_ctrl = 0, s_caps = 0;
+static int s_shift = 0, s_altgr = 0, s_ctrl = 0, s_caps = 0, s_alt = 0, s_toggled = 0;
 static uint32_t s_keyq[64];
 static int s_kq_r = 0, s_kq_w = 0;
 static uint32_t s_last_scan = 0;
 
+/*
+ * Keyboard layouts. Each layout lists the 48 character keys in this order:
+ *   row 1: ` 1 2 3 4 5 6 7 8 9 0 - =        (13 keys)
+ *   row 2: Q W E R T Y U I O P [ ]          (12)
+ *   row 3: A S D F G H J K L ; ' \          (12)
+ *   row 4: <102nd> Z X C V B N M , . /      (11)
+ * as space-separated tokens for: normal, Shift, AltGr. "_" = nothing.
+ * Dead keys: D' acute, D` grave, D^ circumflex, D" diaeresis, D~ tilde, Dv caron.
+ * AltGr + Shift gives the upper-case form of an AltGr letter (e.g. Polish Ą).
+ */
+#define NKEYS 48
+static const unsigned short s_keycodes[NKEYS] = {
+    KEY_GRAVE, KEY_1, KEY_2, KEY_3, KEY_4, KEY_5, KEY_6, KEY_7, KEY_8, KEY_9, KEY_0, KEY_MINUS, KEY_EQUAL,
+    KEY_Q, KEY_W, KEY_E, KEY_R, KEY_T, KEY_Y, KEY_U, KEY_I, KEY_O, KEY_P, KEY_LEFTBRACE, KEY_RIGHTBRACE,
+    KEY_A, KEY_S, KEY_D, KEY_F, KEY_G, KEY_H, KEY_J, KEY_K, KEY_L, KEY_SEMICOLON, KEY_APOSTROPHE, KEY_BACKSLASH,
+    KEY_102ND, KEY_Z, KEY_X, KEY_C, KEY_V, KEY_B, KEY_N, KEY_M, KEY_COMMA, KEY_DOT, KEY_SLASH,
+};
+
 typedef struct {
-    unsigned short code;
-    const char * n;
-    const char * s;
-    const char * a;
-} keymap_t;
+    const char * id;
+    const char * name;
+    const char * n, * s, * a;
+    int cyr; /* Cyrillic: Alt+Shift switches to US and back */
+} layout_t;
 
-/* German layout (de-latin1 without dead keys) */
-static const keymap_t s_map_de[] = {
-    {KEY_1, "1", "!", ""}, {KEY_2, "2", "\"", "²"}, {KEY_3, "3", "§", "³"}, {KEY_4, "4", "$", ""},
-    {KEY_5, "5", "%", ""}, {KEY_6, "6", "&", ""}, {KEY_7, "7", "/", "{"}, {KEY_8, "8", "(", "["},
-    {KEY_9, "9", ")", "]"}, {KEY_0, "0", "=", "}"}, {KEY_MINUS, "ß", "?", "\\"}, {KEY_EQUAL, "´", "`", ""},
-    {KEY_Q, "q", "Q", "@"}, {KEY_W, "w", "W", ""}, {KEY_E, "e", "E", "€"}, {KEY_R, "r", "R", ""},
-    {KEY_T, "t", "T", ""}, {KEY_Y, "z", "Z", ""}, {KEY_U, "u", "U", ""}, {KEY_I, "i", "I", ""},
-    {KEY_O, "o", "O", ""}, {KEY_P, "p", "P", ""}, {KEY_LEFTBRACE, "ü", "Ü", ""}, {KEY_RIGHTBRACE, "+", "*", "~"},
-    {KEY_A, "a", "A", ""}, {KEY_S, "s", "S", ""}, {KEY_D, "d", "D", ""}, {KEY_F, "f", "F", ""},
-    {KEY_G, "g", "G", ""}, {KEY_H, "h", "H", ""}, {KEY_J, "j", "J", ""}, {KEY_K, "k", "K", ""},
-    {KEY_L, "l", "L", ""}, {KEY_SEMICOLON, "ö", "Ö", ""}, {KEY_APOSTROPHE, "ä", "Ä", ""}, {KEY_GRAVE, "^", "°", ""},
-    {KEY_BACKSLASH, "#", "'", ""}, {KEY_102ND, "<", ">", "|"}, {KEY_Z, "y", "Y", ""}, {KEY_X, "x", "X", ""},
-    {KEY_C, "c", "C", ""}, {KEY_V, "v", "V", ""}, {KEY_B, "b", "B", ""}, {KEY_N, "n", "N", ""},
-    {KEY_M, "m", "M", "µ"}, {KEY_COMMA, ",", ";", ""}, {KEY_DOT, ".", ":", ""}, {KEY_SLASH, "-", "_", ""},
-    {KEY_SPACE, " ", " ", " "},
-    {KEY_KP0, "0", "0", ""}, {KEY_KP1, "1", "1", ""}, {KEY_KP2, "2", "2", ""}, {KEY_KP3, "3", "3", ""},
-    {KEY_KP4, "4", "4", ""}, {KEY_KP5, "5", "5", ""}, {KEY_KP6, "6", "6", ""}, {KEY_KP7, "7", "7", ""},
-    {KEY_KP8, "8", "8", ""}, {KEY_KP9, "9", "9", ""}, {KEY_KPDOT, ",", ",", ""}, {KEY_KPMINUS, "-", "-", ""},
-    {KEY_KPPLUS, "+", "+", ""}, {KEY_KPASTERISK, "*", "*", ""}, {KEY_KPSLASH, "/", "/", ""},
-    {0, NULL, NULL, NULL}
+#define US_N "` 1 2 3 4 5 6 7 8 9 0 - = q w e r t y u i o p [ ] a s d f g h j k l ; ' \\ \\ z x c v b n m , . /"
+#define US_S "~ ! @ # $ % ^ & * ( ) _ + Q W E R T Y U I O P { } A S D F G H J K L : \" | | Z X C V B N M < > ?"
+#define NONE "_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _"
+
+static const layout_t s_layouts[] = {
+    {"us", "English (US)", US_N, US_S, NONE, 0},
+    {"gb", "English (UK)",
+     "` 1 2 3 4 5 6 7 8 9 0 - = q w e r t y u i o p [ ] a s d f g h j k l ; ' # \\ z x c v b n m , . /",
+     "¬ ! \" £ $ % ^ & * ( ) _ + Q W E R T Y U I O P { } A S D F G H J K L : @ ~ | Z X C V B N M < > ?",
+     "¦ _ _ _ € _ _ _ _ _ _ _ _ _ _ é _ _ _ ú í ó _ _ _ á _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _", 0},
+    {"de", "Deutsch",
+     "D^ 1 2 3 4 5 6 7 8 9 0 ß D' q w e r t z u i o p ü + a s d f g h j k l ö ä # < y x c v b n m , . -",
+     "° ! \" § $ % & / ( ) = ? D` Q W E R T Z U I O P Ü * A S D F G H J K L Ö Ä ' > Y X C V B N M ; : _",
+     "_ _ ² ³ _ _ _ { [ ] } \\ _ @ _ € _ _ _ _ _ _ _ _ ~ _ _ _ _ _ _ _ _ _ _ _ _ | _ _ _ _ _ _ µ _ _ _", 0},
+    {"ch", "Schweiz (Deutsch)",
+     "§ 1 2 3 4 5 6 7 8 9 0 ' D^ q w e r t z u i o p ü D\" a s d f g h j k l ö ä $ < y x c v b n m , . -",
+     "° + \" * ç % & / ( ) = ? D` Q W E R T Z U I O P è ! A S D F G H J K L é à £ > Y X C V B N M ; : _",
+     "_ ¦ @ # ° § ¬ | ¢ _ _ D' D~ _ _ € _ _ _ _ _ _ _ [ ] _ _ _ _ _ _ _ _ _ _ { } \\ _ _ _ _ _ _ _ _ _ _", 0},
+    {"ch-fr", "Suisse (Français)",
+     "§ 1 2 3 4 5 6 7 8 9 0 ' D^ q w e r t z u i o p è D\" a s d f g h j k l é à $ < y x c v b n m , . -",
+     "° + \" * ç % & / ( ) = ? D` Q W E R T Z U I O P ü ! A S D F G H J K L ö ä £ > Y X C V B N M ; : _",
+     "_ ¦ @ # ° § ¬ | ¢ _ _ D' D~ _ _ € _ _ _ _ _ _ _ [ ] _ _ _ _ _ _ _ _ _ _ { } \\ _ _ _ _ _ _ _ _ _ _", 0},
+    {"fr", "Français (AZERTY)",
+     "² & é \" ' ( - è _U ç à ) = a z e r t y u i o p D^ $ q s d f g h j k l m ù * < w x c v b n , ; : !",
+     "_ 1 2 3 4 5 6 7 8 9 0 ° + A Z E R T Y U I O P D\" £ Q S D F G H J K L M % µ > W X C V B N ? . / §",
+     "_ _ ~ # { [ | ` \\ ^ @ ] } _ _ € _ _ _ _ _ _ _ _ ¤ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _", 0},
+    {"be", "Belgique / België",
+     "² & é \" ' ( § è ! ç à ) - a z e r t y u i o p D^ $ q s d f g h j k l m ù µ < w x c v b n , ; : =",
+     "³ 1 2 3 4 5 6 7 8 9 0 ° _U A Z E R T Y U I O P D\" * Q S D F G H J K L M % £ > W X C V B N ? . / +",
+     "_ | @ # _ _ ^ _ _ { } _ _ _ _ € _ _ _ _ _ _ _ [ ] _ _ _ _ _ _ _ _ _ _ D' D` \\ _ _ _ _ _ _ _ _ _ ~", 0},
+    {"es", "Español",
+     "º 1 2 3 4 5 6 7 8 9 0 ' ¡ q w e r t y u i o p D` + a s d f g h j k l ñ D' ç < z x c v b n m , . -",
+     "ª ! \" · $ % & / ( ) = ? ¿ Q W E R T Y U I O P D^ * A S D F G H J K L Ñ D\" Ç > Z X C V B N M ; : _",
+     "\\ | @ # ~ € ¬ _ _ _ _ _ _ _ _ € _ _ _ _ _ _ _ [ ] _ _ _ _ _ _ _ _ _ _ { } _ _ _ _ _ _ _ _ _ _ _", 0},
+    {"latam", "Español (Latinoamérica)",
+     "| 1 2 3 4 5 6 7 8 9 0 ' ¿ q w e r t y u i o p D' + a s d f g h j k l ñ { } < z x c v b n m , . -",
+     "° ! \" # $ % & / ( ) = ? ¡ Q W E R T Y U I O P D\" * A S D F G H J K L Ñ [ ] > Z X C V B N M ; : _",
+     "¬ _ _ _ _ _ _ _ _ _ _ \\ _ @ _ € _ _ _ _ _ _ _ _ ~ _ _ _ _ _ _ _ _ _ _ ^ ` _ _ _ _ _ _ _ _ _ _ _", 0},
+    {"it", "Italiano",
+     "\\ 1 2 3 4 5 6 7 8 9 0 ' ì q w e r t y u i o p è + a s d f g h j k l ò à ù < z x c v b n m , . -",
+     "| ! \" £ $ % & / ( ) = ? ^ Q W E R T Y U I O P é * A S D F G H J K L ç ° § > Z X C V B N M ; : _",
+     "_ _ _ _ _ € _ { [ ] } ` ~ _ _ € _ _ _ _ _ _ _ [ ] _ _ _ _ _ _ _ _ _ @ # _ _ _ _ _ _ _ _ _ _ _ _", 0},
+    {"pt", "Português",
+     "\\ 1 2 3 4 5 6 7 8 9 0 ' « q w e r t y u i o p + D' a s d f g h j k l ç º D~ < z x c v b n m , . -",
+     "| ! \" # $ % & / ( ) = ? » Q W E R T Y U I O P * D` A S D F G H J K L Ç ª D^ > Z X C V B N M ; : _",
+     "_ _ @ £ § € _ { [ ] } _ _ _ _ € _ _ _ _ _ _ _ D\" _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _", 0},
+    {"br", "Português (Brasil)",
+     "' 1 2 3 4 5 6 7 8 9 0 - = q w e r t y u i o p D' [ a s d f g h j k l ç D~ ] \\ z x c v b n m , . ;",
+     "\" ! @ # $ % D\" & * ( ) _ + Q W E R T Y U I O P D` { A S D F G H J K L Ç D^ } | Z X C V B N M < > :",
+     "_ ¹ ² ³ £ ¢ ¬ _ _ _ _ _ § / ? € _ _ _ _ _ _ _ _ ª _ _ _ _ _ _ _ _ _ _ _ º _ _ _ _ _ _ _ _ _ _ _", 0},
+    {"pl", "Polski", US_N, US_S,
+     "_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ ę _ _ _ € _ ó _ _ _ ą ś _ _ _ _ _ _ ł _ _ _ _ ż ź ć _ _ ń _ _ _ _", 0},
+    {"tr", "Türkçe (Q)",
+     "\" 1 2 3 4 5 6 7 8 9 0 * - q w e r t y u ı o p ğ ü a s d f g h j k l ş i , < z x c v b n m ö ç .",
+     "é ! ' ^ + % & / ( ) = ? _U Q W E R T Y U I O P Ğ Ü A S D F G H J K L Ş İ ; > Z X C V B N M Ö Ç :",
+     "< > £ # $ ½ _ { [ ] } \\ | @ _ € _ _ _ _ _ _ _ D\" ~ _ _ _ _ _ _ _ _ _ D' _ ` | _ _ _ _ _ _ _ _ _ _", 0},
+    {"se", "Svenska / Suomi",
+     "§ 1 2 3 4 5 6 7 8 9 0 + D' q w e r t y u i o p å D\" a s d f g h j k l ö ä ' < z x c v b n m , . -",
+     "½ ! \" # ¤ % & / ( ) = ? D` Q W E R T Y U I O P Å D^ A S D F G H J K L Ö Ä * > Z X C V B N M ; : _",
+     "_ _ @ £ $ € _ { [ ] } \\ _ _ _ € _ _ _ _ _ _ _ _ D~ _ _ _ _ _ _ _ _ _ _ _ _ | _ _ _ _ _ _ µ _ _ _", 0},
+    {"no", "Norsk",
+     "| 1 2 3 4 5 6 7 8 9 0 + \\ q w e r t y u i o p å D\" a s d f g h j k l ø æ ' < z x c v b n m , . -",
+     "§ ! \" # ¤ % & / ( ) = ? D` Q W E R T Y U I O P Å D^ A S D F G H J K L Ø Æ * > Z X C V B N M ; : _",
+     "_ _ @ £ $ € _ { [ ] } _ D' _ _ € _ _ _ _ _ _ _ _ D~ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ µ _ _ _", 0},
+    {"dk", "Dansk",
+     "½ 1 2 3 4 5 6 7 8 9 0 + D' q w e r t y u i o p å D\" a s d f g h j k l æ ø ' < z x c v b n m , . -",
+     "§ ! \" # ¤ % & / ( ) = ? D` Q W E R T Y U I O P Å D^ A S D F G H J K L Æ Ø * > Z X C V B N M ; : _",
+     "_ _ @ £ $ € _ { [ ] } _ | _ _ € _ _ _ _ _ _ _ _ D~ _ _ _ _ _ _ _ _ _ _ _ _ \\ _ _ _ _ _ _ µ _ _ _", 0},
+    {"cz", "Čeština",
+     "; + ě š č ř ž ý á í é = D' q w e r t z u i o p ú ) a s d f g h j k l ů § D\" \\ y x c v b n m , . -",
+     "° 1 2 3 4 5 6 7 8 9 0 % Dv Q W E R T Z U I O P / ( A S D F G H J K L \" ! ' | Y X C V B N M ? : _",
+     "_ ~ _ ^ _ _ _ ` _ _ _ _ _ \\ | € _ _ _ _ _ _ _ _ _ _ _ _ [ ] _ _ _ _ $ _ _ _ _ # & @ { } _ < > _", 0},
+    {"ru", "Русский",
+     "ё 1 2 3 4 5 6 7 8 9 0 - = й ц у к е н г ш щ з х ъ ф ы в а п р о л д ж э \\ \\ я ч с м и т ь б ю .",
+     "Ё ! \" № ; % : ? * ( ) _ + Й Ц У К Е Н Г Ш Щ З Х Ъ Ф Ы В А П Р О Л Д Ж Э / / Я Ч С М И Т Ь Б Ю ,",
+     NONE, 1},
+    {"ua", "Українська",
+     "' 1 2 3 4 5 6 7 8 9 0 - = й ц у к е н г ш щ з х ї ф і в а п р о л д ж є \\ \\ я ч с м и т ь б ю .",
+     "~ ! \" № ; % : ? * ( ) _ + Й Ц У К Е Н Г Ш Щ З Х Ї Ф І В А П Р О Л Д Ж Є / / Я Ч С М И Т Ь Б Ю ,",
+     "_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ ґ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _", 1},
 };
+#define NLAYOUTS ((int)(sizeof(s_layouts) / sizeof(s_layouts[0])))
 
-/* US layout (default); German via SHREDOS_KBD=de or the toggle in the UI */
-static const keymap_t s_map_us[] = {
-    {KEY_1, "1", "!", ""}, {KEY_2, "2", "@", ""}, {KEY_3, "3", "#", ""}, {KEY_4, "4", "$", ""},
-    {KEY_5, "5", "%", ""}, {KEY_6, "6", "^", ""}, {KEY_7, "7", "&", ""}, {KEY_8, "8", "*", ""},
-    {KEY_9, "9", "(", ""}, {KEY_0, "0", ")", ""}, {KEY_MINUS, "-", "_", ""}, {KEY_EQUAL, "=", "+", ""},
-    {KEY_Q, "q", "Q", ""}, {KEY_W, "w", "W", ""}, {KEY_E, "e", "E", ""}, {KEY_R, "r", "R", ""},
-    {KEY_T, "t", "T", ""}, {KEY_Y, "y", "Y", ""}, {KEY_U, "u", "U", ""}, {KEY_I, "i", "I", ""},
-    {KEY_O, "o", "O", ""}, {KEY_P, "p", "P", ""}, {KEY_LEFTBRACE, "[", "{", ""}, {KEY_RIGHTBRACE, "]", "}", ""},
-    {KEY_A, "a", "A", ""}, {KEY_S, "s", "S", ""}, {KEY_D, "d", "D", ""}, {KEY_F, "f", "F", ""},
-    {KEY_G, "g", "G", ""}, {KEY_H, "h", "H", ""}, {KEY_J, "j", "J", ""}, {KEY_K, "k", "K", ""},
-    {KEY_L, "l", "L", ""}, {KEY_SEMICOLON, ";", ":", ""}, {KEY_APOSTROPHE, "'", "\"", ""}, {KEY_GRAVE, "`", "~", ""},
-    {KEY_BACKSLASH, "\\", "|", ""}, {KEY_Z, "z", "Z", ""}, {KEY_X, "x", "X", ""},
-    {KEY_C, "c", "C", ""}, {KEY_V, "v", "V", ""}, {KEY_B, "b", "B", ""}, {KEY_N, "n", "N", ""},
-    {KEY_M, "m", "M", ""}, {KEY_COMMA, ",", "<", ""}, {KEY_DOT, ".", ">", ""}, {KEY_SLASH, "/", "?", ""},
-    {KEY_SPACE, " ", " ", " "},
-    {KEY_KP0, "0", "0", ""}, {KEY_KP1, "1", "1", ""}, {KEY_KP2, "2", "2", ""}, {KEY_KP3, "3", "3", ""},
-    {KEY_KP4, "4", "4", ""}, {KEY_KP5, "5", "5", ""}, {KEY_KP6, "6", "6", ""}, {KEY_KP7, "7", "7", ""},
-    {KEY_KP8, "8", "8", ""}, {KEY_KP9, "9", "9", ""}, {KEY_KPDOT, ".", ".", ""}, {KEY_KPMINUS, "-", "-", ""},
-    {KEY_KPPLUS, "+", "+", ""}, {KEY_KPASTERISK, "*", "*", ""}, {KEY_KPSLASH, "/", "/", ""},
-    {0, NULL, NULL, NULL}
-};
+static char s_tok[2][3][NKEYS][8]; /* [0] = selected layout, [1] = US (for Cyrillic toggle) */
+static int s_layout = 0;
+static int s_latin = 0;            /* Cyrillic layout temporarily switched to US */
+static char s_dead = 0;            /* pending dead key: ' ` ^ " ~ v */
 
-static const keymap_t * s_map = s_map_us;
+static void parse_row(const char * src, char out[NKEYS][8])
+{
+    int k = 0;
+    while(*src && k < NKEYS) {
+        while(*src == ' ') src++;
+        int n = 0;
+        while(*src && *src != ' ' && n < 7) out[k][n++] = *src++;
+        out[k][n] = '\0';
+        while(*src && *src != ' ') src++;
+        if(strcmp(out[k], "_") == 0) out[k][0] = '\0';
+        else if(strcmp(out[k], "_U") == 0) strcpy(out[k], "_");
+        k++;
+    }
+    for(; k < NKEYS; k++) out[k][0] = '\0';
+}
+
+static void load_layout(int idx)
+{
+    if(idx < 0 || idx >= NLAYOUTS) idx = 0;
+    s_layout = idx;
+    s_latin = 0;
+    s_dead = 0;
+    parse_row(s_layouts[idx].n, s_tok[0][0]);
+    parse_row(s_layouts[idx].s, s_tok[0][1]);
+    parse_row(s_layouts[idx].a, s_tok[0][2]);
+    parse_row(US_N, s_tok[1][0]);
+    parse_row(US_S, s_tok[1][1]);
+    parse_row(NONE, s_tok[1][2]);
+}
+
+int input_layout_count(void)
+{
+    return NLAYOUTS;
+}
+
+const char * input_layout_id(int i)
+{
+    return s_layouts[(i >= 0 && i < NLAYOUTS) ? i : 0].id;
+}
+
+const char * input_layout_name(int i)
+{
+    return s_layouts[(i >= 0 && i < NLAYOUTS) ? i : 0].name;
+}
+
+int input_layout_index(const char * id)
+{
+    if(!id) return -1;
+    for(int i = 0; i < NLAYOUTS; i++)
+        if(strcmp(s_layouts[i].id, id) == 0) return i;
+    return -1;
+}
+
+int input_layout(void)
+{
+    return s_layout;
+}
+
+void input_set_layout(int idx)
+{
+    load_layout(idx);
+}
+
+int input_layout_is_cyrillic(void)
+{
+    return s_layouts[s_layout].cyr;
+}
+
+int input_layout_latin_active(void)
+{
+    return s_latin;
+}
+
+/* upper-case form of a single (lower-case) letter token, for AltGr + Shift */
+static void upper_token(const char * in, char * out)
+{
+    uint32_t c = 0;
+    const unsigned char * u = (const unsigned char *)in;
+    int len = 0;
+    if(u[0] < 0x80) { c = u[0]; len = 1; }
+    else if((u[0] & 0xE0) == 0xC0) { c = ((u[0] & 0x1F) << 6) | (u[1] & 0x3F); len = 2; }
+    if(len == 0 || in[len] != '\0') { strcpy(out, in); return; }
+    if(c >= 'a' && c <= 'z') c -= 32;
+    else if((c >= 0xE0 && c <= 0xFE && c != 0xF7)) c -= 32;
+    else if(c >= 0x100 && c <= 0x17F && c != 0x131 && c != 0x138 && c != 0x149 && c != 0x17F) {
+        if(c >= 0x139 && c <= 0x148) { if(!(c & 1)) c -= 1; }       /* Ĺĺ … Ňň: upper is odd */
+        else if(c >= 0x179 && c <= 0x17E) { if(!(c & 1)) c -= 1; }  /* Źź Żż Žž */
+        else if(c & 1) c -= 1;                                      /* Āā … : upper is even */
+    }
+    else if(c == 0x491) c = 0x490;
+    if(c < 0x80) { out[0] = (char)c; out[1] = '\0'; }
+    else { out[0] = (char)(0xC0 | (c >> 6)); out[1] = (char)(0x80 | (c & 0x3F)); out[2] = '\0'; }
+}
+
+/* dead key + letter */
+static const char * compose(char dead, const char * base)
+{
+    static const struct { char d; const char * from; const char * to; } tab[] = {
+        {'\'', "aeiouyAEIOUYcnszCNSZ", "á é í ó ú ý Á É Í Ó Ú Ý ć ń ś ź Ć Ń Ś Ź"},
+        {'`', "aeiouAEIOU", "à è ì ò ù À È Ì Ò Ù"},
+        {'^', "aeiouAEIOU", "â ê î ô û Â Ê Î Ô Û"},
+        {'"', "aeiouyAEIOU", "ä ë ï ö ü ÿ Ä Ë Ï Ö Ü"},
+        {'~', "anoANO", "ã ñ õ Ã Ñ Õ"},
+        {'v', "cdenrstzCDENRSTZ", "č ď ě ň ř š ť ž Č Ď Ě Ň Ř Š Ť Ž"},
+    };
+    static char out[8];
+    if(base[0] == '\0' || base[1] != '\0') return NULL;
+    for(size_t i = 0; i < sizeof(tab) / sizeof(tab[0]); i++) {
+        if(tab[i].d != dead) continue;
+        const char * p = strchr(tab[i].from, base[0]);
+        if(!p) return NULL;
+        int idx = (int)(p - tab[i].from);
+        const char * t = tab[i].to;
+        while(idx-- > 0) {
+            t = strchr(t, ' ');
+            if(!t) return NULL;
+            t++;
+        }
+        int n = 0;
+        while(t[n] && t[n] != ' ' && n < 7) { out[n] = t[n]; n++; }
+        out[n] = '\0';
+        return out;
+    }
+    return NULL;
+}
+
+static const char * dead_char(char d)
+{
+    switch(d) {
+        case '\'': return "´";
+        case '`': return "`";
+        case '^': return "^";
+        case '"': return "¨";
+        case '~': return "~";
+        default: return "ˇ";
+    }
+}
+
+static int key_index(unsigned short code)
+{
+    for(int i = 0; i < NKEYS; i++)
+        if(s_keycodes[i] == code) return i;
+    return -1;
+}
 
 static void kq_push(uint32_t k)
 {
@@ -119,13 +324,11 @@ static void kq_push(uint32_t k)
     s_kq_w = nw;
 }
 
-static int is_letter(unsigned short code)
+static int is_letter_token(const char * t)
 {
-    const char * n = NULL;
-    for(int i = 0; s_map[i].n; i++) if(s_map[i].code == code) n = s_map[i].n;
-    if(!n) return 0;
-    unsigned char c = (unsigned char)n[0];
-    return (c >= 'a' && c <= 'z') || c == 0xC3; /* incl. ä ö ü */
+    unsigned char c = (unsigned char)t[0];
+    if((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')) return t[1] == '\0';
+    return c >= 0xC3 && c <= 0xD3; /* accented Latin and Cyrillic letters */
 }
 
 static lv_obj_t * find_textarea(lv_obj_t * parent)
@@ -158,7 +361,14 @@ static void handle_key(unsigned short code, int value)
 {
     int down = value != 0;
     switch(code) {
-        case KEY_LEFTSHIFT: case KEY_RIGHTSHIFT: s_shift = down; return;
+        case KEY_LEFTSHIFT: case KEY_RIGHTSHIFT:
+            if(value == 1 && s_alt && s_layouts[s_layout].cyr) s_latin = !s_latin, s_toggled = 1;
+            s_shift = down;
+            return;
+        case KEY_LEFTALT:
+            if(value == 1 && s_shift && s_layouts[s_layout].cyr) s_latin = !s_latin, s_toggled = 1;
+            s_alt = down;
+            return;
         case KEY_RIGHTALT: s_altgr = down; return;
         case KEY_LEFTCTRL: case KEY_RIGHTCTRL: s_ctrl = down; return;
         case KEY_CAPSLOCK: if(value == 1) s_caps = !s_caps; return;
@@ -187,14 +397,73 @@ static void handle_key(unsigned short code, int value)
         return;
     }
     if(s_ctrl) return; /* do not insert control characters */
-    for(int i = 0; s_map[i].n; i++) {
-        if(s_map[i].code != code) continue;
-        int shift = s_shift;
-        if(s_caps && is_letter(code)) shift = !shift;
-        const char * t = s_altgr ? s_map[i].a : (shift ? s_map[i].s : s_map[i].n);
-        if(t && t[0] && strcmp(t, "´") != 0 && strcmp(t, "`") != 0) insert_text(t);
+    const char * fixed = NULL;
+    switch(code) {
+        case KEY_SPACE: fixed = " "; break;
+        case KEY_KP0: fixed = "0"; break;
+        case KEY_KP1: fixed = "1"; break;
+        case KEY_KP2: fixed = "2"; break;
+        case KEY_KP3: fixed = "3"; break;
+        case KEY_KP4: fixed = "4"; break;
+        case KEY_KP5: fixed = "5"; break;
+        case KEY_KP6: fixed = "6"; break;
+        case KEY_KP7: fixed = "7"; break;
+        case KEY_KP8: fixed = "8"; break;
+        case KEY_KP9: fixed = "9"; break;
+        case KEY_KPDOT: fixed = "."; break;
+        case KEY_KPMINUS: fixed = "-"; break;
+        case KEY_KPPLUS: fixed = "+"; break;
+        case KEY_KPASTERISK: fixed = "*"; break;
+        case KEY_KPSLASH: fixed = "/"; break;
+        case KEY_RO: fixed = s_shift ? "?" : "/"; break; /* extra key on Brazilian keyboards */
+        default: break;
+    }
+    char tok[8];
+    if(fixed) str_copy(tok, fixed, sizeof(tok));
+    else {
+        int ki = key_index(code);
+        if(ki < 0) return;
+        int set = (s_layouts[s_layout].cyr && s_latin) ? 1 : 0;
+        const char * n = s_tok[set][0][ki];
+        if(s_altgr) {
+            str_copy(tok, s_tok[set][2][ki], sizeof(tok));
+            if(s_shift && tok[0] && tok[0] != 'D') {
+                char up[8];
+                upper_token(tok, up);
+                str_copy(tok, up, sizeof(tok));
+            }
+        }
+        else {
+            int shift = s_shift;
+            if(s_caps && is_letter_token(n)) shift = !shift;
+            str_copy(tok, s_tok[set][shift ? 1 : 0][ki], sizeof(tok));
+        }
+    }
+    if(!tok[0]) return;
+    /* dead key pressed? ("D" followed by exactly one mark; a plain "D" is the letter) */
+    if(tok[0] == 'D' && tok[1] != '\0' && tok[2] == '\0' && strchr("'`^\"~v", tok[1])) {
+        if(s_dead == tok[1]) { /* twice = the accent itself */
+            insert_text(dead_char(s_dead));
+            s_dead = 0;
+        }
+        else s_dead = tok[1];
         return;
     }
+    if(s_dead) {
+        char d = s_dead;
+        s_dead = 0;
+        const char * c = compose(d, tok);
+        if(c) {
+            insert_text(c);
+            return;
+        }
+        if(strcmp(tok, " ") == 0) {
+            insert_text(dead_char(d));
+            return;
+        }
+        insert_text(dead_char(d));
+    }
+    insert_text(tok);
 }
 
 static void open_dev(const char * path)
@@ -357,6 +626,16 @@ static void pad_event(in_dev_t * d, const struct input_event * ev)
     }
 }
 
+/* for tests: press one key with modifiers */
+void input_test_key(int code, int shift, int altgr)
+{
+    s_shift = shift;
+    s_altgr = altgr;
+    handle_key((unsigned short)code, 1);
+    handle_key((unsigned short)code, 0);
+    s_shift = s_altgr = 0;
+}
+
 /* for tests: feed raw events into a simulated touchpad */
 void input_test_pad(const struct input_event * ev, int n, int * x, int * y, int * pressed, int * wheel)
 {
@@ -451,8 +730,7 @@ static void kp_read(lv_indev_t * indev, lv_indev_data_t * data)
 
 void input_init(lv_display_t * disp)
 {
-    const char * kb = getenv("SHREDOS_KBD");
-    if(kb && strncmp(kb, "de", 2) == 0) s_map = s_map_de;
+    if(s_tok[0][0][1][0] == '\0') load_layout(s_layout);
     s_w = lv_display_get_horizontal_resolution(disp);
     s_h = lv_display_get_vertical_resolution(disp);
     s_x = s_w / 2;
@@ -522,14 +800,12 @@ int input_has_keyboard(void)
     return s_has_kbd;
 }
 
-int input_layout_is_de(void)
+/* 1 once after Alt+Shift switched between Cyrillic and Latin (the UI updates its hint) */
+int input_take_layout_toggle(void)
 {
-    return s_map == s_map_de;
-}
-
-void input_toggle_layout(void)
-{
-    s_map = (s_map == s_map_de) ? s_map_us : s_map_de;
+    int t = s_toggled;
+    s_toggled = 0;
+    return t;
 }
 
 int input_take_wheel(void)

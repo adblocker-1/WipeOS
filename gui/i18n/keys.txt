@@ -1,0 +1,232 @@
+1|Create job
+2|File not found
+3|File too large (%.1f MB, max. %d MB)
+4|Not a readable PNG or JPG image
+5|Image too large (%d x %d px, max. %d x %d)
+6|Image too small (%d x %d px)
+7|Could not decode image (%s)
+8|Image is completely transparent
+9|Out of memory
+10|Erased with WipeOS · device and drive details from BIOS (DMI) and drive firmware
+11|Page %d of %d
+12|Erasure report %s
+13|Could not create PDF
+14|Verification report
+15|Erasure report
+16|Job %s · %s
+17|VERIFIED
+18|ERASED · VERIFIED
+19|ERASED
+20|VERIFICATION FAILED
+21|NOT ERASED
+22|%d of %d drives read back and checked · %llu errors
+23|%d of %d drives erased and verified by read-back · %llu errors
+24|%d of %d drives erased (no verification) · %llu errors
+25|Model
+26|Serial number
+27|Type
+28|Capacity
+29|Duration
+30|Result
+31|Erasure report %s · continued
+32|Verified
+33|Erased
+34|Aborted
+35|Failed
+36|No drives erased.
+37|read only
+38|Rounds: %d
+39|zero blanking
+40|all passes verified
+41|last pass verified
+42|not verified
+43|not used
+44|detected
+45|none
+46|not checkable
+47|%llu (write / sync / verify)
+48|Note
+49|Technician
+50|Customer
+51|Saving failed: %s
+52|Select drives
+53|Choose method
+54|Erase
+55|Report
+56|Alt + Shift switches between Cyrillic and Latin letters.
+57|Same as interface
+58|Language and keyboard
+59|Language
+60|Keyboard layout
+61|Language of the erasure report
+62|Keyboard test
+63|Type here to try the layout
+64|Cancel
+65|Save
+66|Next field
+67|Continue
+68|Zoom
+69|Classic nwipe
+70|JOB %s
+71|Device
+72|STEP %d OF 5
+73|No customer matches your search.
+74|No customers yet. Create a new customer.
+75|Company / name *
+76|e.g. Example Ltd
+77|Reference
+78|e.g. PO number
+79|Contact person
+80|Phone / email
+81|optional
+82|Street
+83|Postcode
+84|City
+85|Will be saved as customer %s.
+86|Search name, city or customer no. …
+87|Add technician
+88|Name *
+89|First and last name
+90|No technicians yet.
+91|No logo on the report
+92|No logo
+93|Your company
+94|Shown in the letterhead of every erasure report.
+95|Company name
+96|e.g. Example IT Services Ltd
+97|Address
+98|Street, postcode city
+99|e.g. +44 161 555 0100 · service@example.com
+100|Saved in %s/company.txt%s
+101| (until reboot only – no WipeOS stick found)
+102|Company logo
+103|PNG or JPG in the wipeos/logos folder of the stick · max. 5 MB, 4000 × 4000 px · best: wide PNG with transparent background, at least 600 px wide
+104|Rescan stick
+105|Tip: copy your logo to the stick on any PC as wipeos/logos/company-logo.png – it is used automatically.
+106|Please enter the customer name.
+107|Please select a customer.
+108|Please select or add a technician.
+109|Please enter a system name for the device.
+110|No WipeOS stick: data kept until reboot only
+111|Set up your company
+112|New customer
+113|Existing
+114|+ Add technician
+115|Manufacturer
+116|System name *
+117|e.g. Accounting-NB-07
+118|Asset tag
+119|optional, shown on the report
+120|Continue to drives
+121|No drive selected
+122|Selected: %d · %s
+123|Drives found: %d
+124|Rescan
+125|Select all
+126|NVMe SSD
+127|Hard disk (HDD)
+128|SSD / Flash
+129|WipeOS boot drive · protected
+130|External USB drive
+131|Internal drive
+132|No drives found. Check the connections and tap “Rescan”.
+133|Back
+134|Continue to method
+135|Plan
+136|Estimated total
+137|All data on the selected drives will be permanently erased.
+138|Start failed
+139|nwipe could not be started.
+140|Start verification?
+141|Erase permanently?
+142|These drives will only be read and checked. No data will be changed.
+143|These drives will be completely overwritten. This cannot be undone.
+144|Start verification
+145|Erase permanently
+146|How should the drives be erased?
+147|Method
+148|Options (not used for read-only methods)
+149|Options
+150|Random generator
+151|Verification
+152|Off\nLast pass\nAll passes
+153|Rounds
+154|Final blanking pass (zeros)
+155|Start erasure
+156|Recommended
+157|Waiting …
+158|Verifying
+159|Blanking (zeros)
+160|Writing
+161|%s · pass %d/%d · %.0f %%
+162|Speed %s     Remaining %s     Errors %llu
+163|calculating …
+164|approx. %s
+165|Erasure continues · tap to wake
+166|Abort erasure?
+167|Aborted drives are only partially erased. The report will record the abort.
+168|Keep erasing
+169|Erasing
+170|Do not switch off the device. You can dim the screen – erasing continues.
+171|total
+172|Remaining
+173|Elapsed
+174|Estimated finish
+175|Errors
+176|Starting …
+177|Dim screen
+178|All drives verified
+179|All drives securely erased
+180|Verification failed
+181|Not all drives were erased
+182|%s · %s · %s · %d of %d verified
+183|%s · %s · %s · %d of %d erased
+184|Drive
+185|Saved to the WipeOS stick in wipeos/reports
+186|No WipeOS stick found – report only in memory (/tmp/wipeos/reports)
+187|The report could not be created.
+188|Job %s · Customer %s
+189|Restart
+190|Shut down
+191|Next job
+192|Fills the device with a stream from the random number generator.
+193|Fills the device with zeros (0x00).
+194|Fills the device with ones (0xFF).
+195|Royal Canadian Mounted Police Technical Security Standard, OPS-II.
+196|U.S. Department of Defense 5220.22-M short 3-pass wipe (passes 1, 2 & 7).
+197|U.S. Department of Defense 5220.22-M full 7-pass wipe.
+198|Peter Gutmann's 35-pass method. Very slow, not needed for modern drives.
+199|UK HMG IS5 (Enhanced) sanitisation method for protectively marked information.
+200|Bruce Schneier's 7-pass mixed-pattern algorithm.
+201|Chinese State Secrets Bureau BMB21-2019 technical requirement for data sanitisation.
+202|Only reads the device and checks that it is filled with zeros (0x00).
+203|Only reads the device and checks that it is filled with ones (0xFF).
+204|Passes: %d
+205|verify all passes
+206|verify last pass
+207|no verification
+208|Desktop
+209|Laptop
+210|Handheld
+211|All-in-one
+212|Server
+213|Tablet
+214|Embedded PC
+215|Computer
+216|unknown
+217|Unknown drive
+218|Customer no.
+219|Contact
+220|System name
+221|Device type
+222|Started
+223|Finished
+224|Passes
+225|HPA / DCO
+226|Software
+227|CUSTOMER
+228|DEVICE
+229|VERIFIED DRIVES
+230|ERASED DRIVES
+231|VERIFICATION
+232|ERASURE

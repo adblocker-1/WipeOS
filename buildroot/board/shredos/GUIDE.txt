@@ -47,11 +47,17 @@ folder in WipeOS under "Your company".
 - On the report the logo is fitted into 70 x 18 mm (top left), keeping
   its aspect ratio; transparent borders are trimmed automatically.
 
-Keyboard, mouse and display
----------------------------
-- Keyboard: just start typing, the first field is selected. Tab = next
-  field, Enter = continue. "Keyboard: US/DE" (bottom left) switches the
-  layout.
+Language, keyboard, mouse and display
+-------------------------------------
+- Language: on the first start WipeOS asks for the language, the keyboard
+  layout and the language of the erasure report. Change them later with
+  the language button at the bottom left of step 1.
+  Languages: English, Deutsch, Francais, Espanol, Italiano, Portugues,
+  Nederlands, Polski, Turkce, Russian, Ukrainian.
+- Keyboard: 20 layouts (US, UK, DE, CH, FR, BE, ES, Latin America, IT,
+  PT, BR, PL, TR, SE/FI, NO, DK, CZ, RU, UA). Just start typing, the first
+  field is selected. Tab = next field, Enter = continue. With a Russian or
+  Ukrainian layout, Alt+Shift switches to Latin letters and back.
 - Mouse: USB mice, laptop touchpads (tap = click, two fingers = scroll)
   and touchscreens are supported.
 - High-resolution displays (QHD, 4K): the interface is enlarged

@@ -1,0 +1,232 @@
+1|Opdracht aanmaken
+2|Bestand niet gevonden
+3|Bestand te groot (%.1f MB, max. %d MB)
+4|Geen leesbare PNG- of JPG-afbeelding
+5|Afbeelding te groot (%d x %d px, max. %d x %d)
+6|Afbeelding te klein (%d x %d px)
+7|Afbeelding kon niet worden gelezen (%s)
+8|Afbeelding is volledig transparant
+9|Onvoldoende geheugen
+10|Gewist met WipeOS · apparaat- en schijfgegevens uit BIOS (DMI) en schijffirmware
+11|Pagina %d van %d
+12|Wisrapport %s
+13|PDF kon niet worden gemaakt
+14|Controlerapport
+15|Wisrapport
+16|Opdracht %s · %s
+17|GECONTROLEERD
+18|GEWIST · GECONTROLEERD
+19|GEWIST
+20|CONTROLE MISLUKT
+21|NIET GEWIST
+22|%d van %d schijven gelezen en gecontroleerd · %llu fouten
+23|%d van %d schijven gewist en door teruglezen gecontroleerd · %llu fouten
+24|%d van %d schijven gewist (zonder controle) · %llu fouten
+25|Model
+26|Serienummer
+27|Type
+28|Capaciteit
+29|Duur
+30|Resultaat
+31|Wisrapport %s · vervolg
+32|Gecontroleerd
+33|Gewist
+34|Afgebroken
+35|Mislukt
+36|Geen schijven gewist.
+37|alleen lezen
+38|Rondes: %d
+39|afsluitend nullen
+40|alle doorgangen gecontroleerd
+41|laatste doorgang gecontroleerd
+42|niet gecontroleerd
+43|niet gebruikt
+44|gevonden
+45|geen
+46|niet controleerbaar
+47|%llu (schrijven / sync / controle)
+48|Notitie
+49|Technicus
+50|Klant
+51|Opslaan mislukt: %s
+52|Schijven kiezen
+53|Methode kiezen
+54|Wissen
+55|Rapport
+56|Alt + Shift wisselt tussen cyrillische en Latijnse letters.
+57|Zelfde als interface
+58|Taal en toetsenbord
+59|Taal
+60|Toetsenbordindeling
+61|Taal van het wisrapport
+62|Toetsenbordtest
+63|Typ hier om de indeling te proberen
+64|Annuleren
+65|Opslaan
+66|Volgend veld
+67|Verder
+68|Zoom
+69|Klassieke nwipe
+70|OPDRACHT %s
+71|Apparaat
+72|STAP %d VAN 5
+73|Geen klant komt overeen met de zoekopdracht.
+74|Nog geen klanten. Maak een nieuwe klant aan.
+75|Bedrijf / naam *
+76|bijv. Voorbeeld B.V.
+77|Referentie
+78|bijv. ordernummer
+79|Contactpersoon
+80|Telefoon / e-mail
+81|optioneel
+82|Straat
+83|Postcode
+84|Plaats
+85|Wordt opgeslagen als klant %s.
+86|Zoek op naam, plaats of klantnr. …
+87|Technicus toevoegen
+88|Naam *
+89|Voor- en achternaam
+90|Nog geen technici.
+91|Geen logo op het rapport
+92|Geen logo
+93|Uw bedrijf
+94|Staat in het briefhoofd van elk wisrapport.
+95|Bedrijfsnaam
+96|bijv. Voorbeeld IT-Service B.V.
+97|Adres
+98|Straat, postcode plaats
+99|bijv. +31 20 123 4567 · service@example.com
+100|Opgeslagen in %s/company.txt%s
+101| (alleen tot de herstart – geen WipeOS-stick gevonden)
+102|Bedrijfslogo
+103|PNG of JPG in de map wipeos/logos op de stick · max. 5 MB, 4000 × 4000 px · het beste: brede PNG met transparante achtergrond, minstens 600 px breed
+104|Stick opnieuw lezen
+105|Tip: kopieer uw logo op een pc als wipeos/logos/company-logo.png naar de stick – het wordt automatisch gebruikt.
+106|Voer de naam van de klant in.
+107|Kies een klant.
+108|Kies een technicus of voeg er een toe.
+109|Voer een systeemnaam voor het apparaat in.
+110|Geen WipeOS-stick: gegevens blijven alleen tot de herstart bewaard
+111|Uw bedrijf instellen
+112|Nieuwe klant
+113|Bestaand
+114|+ Technicus toevoegen
+115|Fabrikant
+116|Systeemnaam *
+117|bijv. Boekhouding-NB-07
+118|Inventarisnr.
+119|optioneel, staat op het rapport
+120|Verder naar de schijven
+121|Geen schijf gekozen
+122|Gekozen: %d · %s
+123|Schijven gevonden: %d
+124|Vernieuwen
+125|Alles kiezen
+126|NVMe-SSD
+127|Harde schijf (HDD)
+128|SSD / Flash
+129|WipeOS-opstartschijf · beveiligd
+130|Externe USB-schijf
+131|Interne schijf
+132|Geen schijven gevonden. Controleer de aansluitingen en tik op “Vernieuwen”.
+133|Terug
+134|Verder naar de methode
+135|Plan
+136|Geschatte totale duur
+137|Alle gegevens op de gekozen schijven worden definitief gewist.
+138|Starten mislukt
+139|nwipe kon niet worden gestart.
+140|Controle starten?
+141|Definitief wissen?
+142|Deze schijven worden alleen gelezen en gecontroleerd. Er worden geen gegevens gewijzigd.
+143|Deze schijven worden volledig overschreven. Dit kan niet ongedaan worden gemaakt.
+144|Controle starten
+145|Definitief wissen
+146|Hoe moeten de schijven worden gewist?
+147|Methode
+148|Opties (niet gebruikt bij alleen-lezenmethoden)
+149|Opties
+150|Toevalsgenerator
+151|Controle
+152|Uit\nLaatste doorgang\nAlle doorgangen
+153|Rondes
+154|Afsluitende doorgang met nullen
+155|Wissen starten
+156|Aanbevolen
+157|Wacht …
+158|Controleren
+159|Nullen schrijven
+160|Schrijven
+161|%s · doorgang %d/%d · %.0f %%
+162|Snelheid %s     Resterend %s     Fouten %llu
+163|wordt berekend …
+164|ca. %s
+165|Wissen loopt door · tik om te activeren
+166|Wissen afbreken?
+167|Afgebroken schijven zijn slechts gedeeltelijk gewist. De afbreking komt in het rapport te staan.
+168|Verder wissen
+169|Bezig met wissen
+170|Schakel het apparaat niet uit. U kunt het scherm dimmen – het wissen loopt door.
+171|totaal
+172|Resterend
+173|Verstreken
+174|Verwacht klaar
+175|Fouten
+176|Start …
+177|Scherm dimmen
+178|Alle schijven gecontroleerd
+179|Alle schijven veilig gewist
+180|Controle mislukt
+181|Niet alle schijven zijn gewist
+182|%s · %s · %s · %d van %d gecontroleerd
+183|%s · %s · %s · %d van %d gewist
+184|Schijf
+185|Opgeslagen op de WipeOS-stick in wipeos/reports
+186|Geen WipeOS-stick gevonden – rapport alleen in het geheugen (/tmp/wipeos/reports)
+187|Het rapport kon niet worden gemaakt.
+188|Opdracht %s · Klant %s
+189|Opnieuw starten
+190|Afsluiten
+191|Volgende opdracht
+192|Vult de schijf met een stroom uit de toevalsgenerator.
+193|Vult de schijf met nullen (0x00).
+194|Vult de schijf met enen (0xFF).
+195|Technische beveiligingsnorm OPS-II van de Royal Canadian Mounted Police.
+196|Amerikaans ministerie van Defensie 5220.22-M, korte versie met 3 doorgangen (doorgangen 1, 2 en 7).
+197|Amerikaans ministerie van Defensie 5220.22-M, volledige versie met 7 doorgangen.
+198|Methode van Peter Gutmann met 35 doorgangen. Zeer traag, niet nodig voor moderne schijven.
+199|Britse methode HMG IS5 (Enhanced) voor gerubriceerde informatie.
+200|Algoritme van Bruce Schneier met 7 doorgangen en gemengde patronen.
+201|Technische eis BMB21-2019 van het Chinese Bureau voor Staatsgeheimen.
+202|Leest de schijf alleen en controleert of deze met nullen (0x00) is gevuld.
+203|Leest de schijf alleen en controleert of deze met enen (0xFF) is gevuld.
+204|Doorgangen: %d
+205|alle doorgangen controleren
+206|laatste doorgang controleren
+207|zonder controle
+208|Desktop
+209|Laptop
+210|Handheld
+211|All-in-one
+212|Server
+213|Tablet
+214|Embedded pc
+215|Computer
+216|onbekend
+217|Onbekende schijf
+218|Klantnr.
+219|Contact
+220|Systeemnaam
+221|Apparaattype
+222|Begin
+223|Einde
+224|Doorgangen
+225|HPA / DCO
+226|Software
+227|KLANT
+228|APPARAAT
+229|GECONTROLEERDE SCHIJVEN
+230|GEWISTE SCHIJVEN
+231|CONTROLE
+232|WISSEN

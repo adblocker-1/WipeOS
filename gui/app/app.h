@@ -104,6 +104,26 @@ typedef enum {
 
 #define PRNG_COUNT 8
 
+/* languages (i18n.c) */
+typedef enum { LANG_EN, LANG_DE, LANG_FR, LANG_ES, LANG_IT, LANG_PT, LANG_NL, LANG_PL, LANG_TR, LANG_RU, LANG_UK, LANG_COUNT } lang_t;
+typedef struct {
+    const char * en;
+    const char * tr;
+} tr_pair_t;
+extern lang_t g_lang;   /* interface language */
+extern lang_t g_rlang;  /* report language */
+const char * tr_in(lang_t l, const char * en);
+#define _(s) tr_in(g_lang, s)   /* interface text */
+#define R_(s) tr_in(g_rlang, s) /* report text */
+#define N_(s) s                 /* marked for translation, translated where it is used */
+const char * lang_code(lang_t l);
+const char * lang_name(lang_t l);
+const char * lang_default_kbd(lang_t l);
+int lang_from_code(const char * code);
+const tr_pair_t * lang_table(lang_t l);
+const char * symt(const char * sym, const char * text);
+const char * tsym(const char * text, const char * sym);
+
 /* company logo limits */
 #define LOGO_NAME_LEN 64
 #define LOGO_MAX_BYTES (5 * 1024 * 1024)
@@ -163,6 +183,11 @@ void storage_save_org(void);
 void storage_sync(void);
 int storage_get_scale(void);        /* saved zoom, 0 = automatic */
 void storage_set_scale(int sc);
+const char * storage_get_setting(const char * key); /* "language", "keyboard", "report_language" */
+void storage_set_locale(const char * lang, const char * kbd, const char * rlang);
+void locale_init(void);       /* applies saved settings / boot parameters */
+extern int g_locale_chosen;   /* 0 = first start: ask for the language */
+extern int g_rlang_same;      /* report language follows the interface language */
 int storage_list_images(char names[][LOGO_NAME_LEN], int max); /* PNG/JPG files in the data folder */
 int storage_logo_path(char * out, size_t len);                /* 0 = company logo file exists */
 
@@ -175,6 +200,7 @@ int img_check_file(const char * path, int * w, int * h, char * err, size_t errle
 int img_load(const char * path, int max_w, int max_h, img_t * out, char * err, size_t errlen);
 int img_wipeos_logo(int large, img_t * out);
 uint8_t * img_to_rgb_on_white(const img_t * im);
+uint8_t * img_to_jpeg(const img_t * im, int quality, size_t * len);
 void img_free(img_t * im);
 
 /* sysinfo.c */
@@ -206,9 +232,16 @@ int report_create(char * out_path, size_t len, char * err, size_t errlen);
 void input_init(lv_display_t * disp);
 void input_poll_hotplug(void);
 int input_has_keyboard(void);
-int input_layout_is_de(void);
+int input_layout_count(void);
+const char * input_layout_id(int i);    /* "us", "de", ... */
+const char * input_layout_name(int i);
+int input_layout_index(const char * id); /* -1 = unknown */
+int input_layout(void);
+void input_set_layout(int idx);
+int input_layout_is_cyrillic(void);
+int input_layout_latin_active(void);
+int input_take_layout_toggle(void);
 int input_take_wheel(void);
-void input_toggle_layout(void);
 
 /* main.c */
 void app_quit(int code);  /* 10 = classic nwipe, 20 = power off, 21 = reboot, 30 = restart interface */

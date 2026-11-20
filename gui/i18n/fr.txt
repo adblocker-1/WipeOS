@@ -1,0 +1,232 @@
+1|Créer une intervention
+2|Fichier introuvable
+3|Fichier trop volumineux (%.1f Mo, max. %d Mo)
+4|Image PNG ou JPG illisible
+5|Image trop grande (%d x %d px, max. %d x %d)
+6|Image trop petite (%d x %d px)
+7|Impossible de décoder l'image (%s)
+8|L'image est entièrement transparente
+9|Mémoire insuffisante
+10|Effacé avec WipeOS · données de l'appareil et des disques issues du BIOS (DMI) et du firmware des disques
+11|Page %d sur %d
+12|Rapport d'effacement %s
+13|Impossible de créer le PDF
+14|Rapport de vérification
+15|Rapport d'effacement
+16|Intervention %s · %s
+17|VÉRIFIÉ
+18|EFFACÉ · VÉRIFIÉ
+19|EFFACÉ
+20|ÉCHEC DE LA VÉRIFICATION
+21|NON EFFACÉ
+22|%d disque(s) sur %d relus et contrôlés · %llu erreur(s)
+23|%d disque(s) sur %d effacés et vérifiés par relecture · %llu erreur(s)
+24|%d disque(s) sur %d effacés (sans vérification) · %llu erreur(s)
+25|Modèle
+26|Numéro de série
+27|Type
+28|Capacité
+29|Durée
+30|Résultat
+31|Rapport d'effacement %s · suite
+32|Vérifié
+33|Effacé
+34|Interrompu
+35|Échec
+36|Aucun disque effacé.
+37|lecture seule
+38|Cycles : %d
+39|remise à zéro finale
+40|toutes les passes vérifiées
+41|dernière passe vérifiée
+42|non vérifié
+43|non utilisé
+44|détecté
+45|aucun
+46|non vérifiable
+47|%llu (écriture / synchro / vérification)
+48|Remarque
+49|Technicien
+50|Client
+51|Échec de l'enregistrement : %s
+52|Choisir les disques
+53|Choisir la méthode
+54|Effacer
+55|Rapport
+56|Alt + Maj bascule entre les lettres cyrilliques et latines.
+57|Identique à l'interface
+58|Langue et clavier
+59|Langue
+60|Disposition du clavier
+61|Langue du rapport d'effacement
+62|Test du clavier
+63|Tapez ici pour essayer la disposition
+64|Annuler
+65|Enregistrer
+66|Champ suivant
+67|Continuer
+68|Zoom
+69|nwipe classique
+70|INTERVENTION %s
+71|Appareil
+72|ÉTAPE %d SUR 5
+73|Aucun client ne correspond à la recherche.
+74|Aucun client pour l'instant. Créez un nouveau client.
+75|Société / nom *
+76|p. ex. Exemple SARL
+77|Référence
+78|p. ex. n° de commande
+79|Interlocuteur
+80|Téléphone / e-mail
+81|facultatif
+82|Rue
+83|Code postal
+84|Ville
+85|Sera enregistré comme client %s.
+86|Rechercher nom, ville ou n° client …
+87|Ajouter un technicien
+88|Nom *
+89|Prénom et nom
+90|Aucun technicien pour l'instant.
+91|Pas de logo sur le rapport
+92|Pas de logo
+93|Votre société
+94|Figure dans l'en-tête de chaque rapport d'effacement.
+95|Nom de la société
+96|p. ex. Exemple Services IT SARL
+97|Adresse
+98|Rue, code postal ville
+99|p. ex. +33 1 23 45 67 89 · service@example.com
+100|Enregistré dans %s/company.txt%s
+101| (jusqu'au redémarrage seulement – clé WipeOS introuvable)
+102|Logo de la société
+103|PNG ou JPG dans le dossier wipeos/logos de la clé · max. 5 Mo, 4000 × 4000 px · idéal : PNG large à fond transparent, au moins 600 px de large
+104|Relire la clé
+105|Astuce : copiez votre logo sur la clé depuis un PC sous wipeos/logos/company-logo.png – il sera utilisé automatiquement.
+106|Veuillez saisir le nom du client.
+107|Veuillez choisir un client.
+108|Veuillez choisir ou ajouter un technicien.
+109|Veuillez saisir un nom de système pour l'appareil.
+110|Pas de clé WipeOS : données conservées jusqu'au redémarrage seulement
+111|Configurer votre société
+112|Nouveau client
+113|Existant
+114|+ Ajouter un technicien
+115|Fabricant
+116|Nom du système *
+117|p. ex. Compta-PC-07
+118|N° d'inventaire
+119|facultatif, figure sur le rapport
+120|Continuer vers les disques
+121|Aucun disque sélectionné
+122|Sélection : %d · %s
+123|Disques trouvés : %d
+124|Actualiser
+125|Tout sélectionner
+126|SSD NVMe
+127|Disque dur (HDD)
+128|SSD / Flash
+129|Disque de démarrage WipeOS · protégé
+130|Disque USB externe
+131|Disque interne
+132|Aucun disque trouvé. Vérifiez les connexions et appuyez sur « Actualiser ».
+133|Retour
+134|Continuer vers la méthode
+135|Plan
+136|Durée totale estimée
+137|Toutes les données des disques sélectionnés seront définitivement effacées.
+138|Échec du démarrage
+139|Impossible de démarrer nwipe.
+140|Lancer la vérification ?
+141|Effacer définitivement ?
+142|Ces disques seront seulement lus et contrôlés. Aucune donnée ne sera modifiée.
+143|Ces disques seront entièrement écrasés. Cette action est irréversible.
+144|Lancer la vérification
+145|Effacer définitivement
+146|Comment effacer les disques ?
+147|Méthode
+148|Options (sans effet pour les méthodes en lecture seule)
+149|Options
+150|Générateur aléatoire
+151|Vérification
+152|Désactivée\nDernière passe\nToutes les passes
+153|Cycles
+154|Remise à zéro finale
+155|Lancer l'effacement
+156|Recommandé
+157|En attente …
+158|Vérification
+159|Remise à zéro
+160|Écriture
+161|%s · passe %d/%d · %.0f %%
+162|Débit %s     Restant %s     Erreurs %llu
+163|calcul en cours …
+164|vers %s
+165|L'effacement continue · touchez pour réactiver
+166|Interrompre l'effacement ?
+167|Les disques interrompus ne sont que partiellement effacés. L'interruption figurera dans le rapport.
+168|Poursuivre l'effacement
+169|Effacement en cours
+170|N'éteignez pas l'appareil. Vous pouvez éteindre l'écran – l'effacement continue.
+171|total
+172|Restant
+173|Écoulé
+174|Fin estimée
+175|Erreurs
+176|Démarrage …
+177|Éteindre l'écran
+178|Tous les disques sont vérifiés
+179|Tous les disques sont effacés de manière sûre
+180|Échec de la vérification
+181|Tous les disques n'ont pas été effacés
+182|%s · %s · %s · %d sur %d vérifiés
+183|%s · %s · %s · %d sur %d effacés
+184|Disque
+185|Enregistré sur la clé WipeOS dans wipeos/reports
+186|Clé WipeOS introuvable – rapport en mémoire seulement (/tmp/wipeos/reports)
+187|Impossible de créer le rapport.
+188|Intervention %s · Client %s
+189|Redémarrer
+190|Éteindre
+191|Intervention suivante
+192|Remplit le disque avec un flux issu du générateur de nombres aléatoires.
+193|Remplit le disque de zéros (0x00).
+194|Remplit le disque de uns (0xFF).
+195|Norme de sécurité technique OPS-II de la Gendarmerie royale du Canada.
+196|Département de la Défense des États-Unis 5220.22-M, version courte en 3 passes (passes 1, 2 et 7).
+197|Département de la Défense des États-Unis 5220.22-M, version complète en 7 passes.
+198|Méthode de Peter Gutmann en 35 passes. Très lente, inutile pour les disques modernes.
+199|Méthode britannique HMG IS5 (Enhanced) pour les informations classifiées.
+200|Algorithme de Bruce Schneier en 7 passes à motifs mixtes.
+201|Exigence technique BMB21-2019 du Bureau chinois des secrets d'État.
+202|Lit seulement le disque et vérifie qu'il est rempli de zéros (0x00).
+203|Lit seulement le disque et vérifie qu'il est rempli de uns (0xFF).
+204|Passes : %d
+205|vérifier toutes les passes
+206|vérifier la dernière passe
+207|sans vérification
+208|Ordinateur de bureau
+209|Ordinateur portable
+210|Appareil portatif
+211|Tout-en-un
+212|Serveur
+213|Tablette
+214|PC embarqué
+215|Ordinateur
+216|inconnu
+217|Disque inconnu
+218|N° client
+219|Interlocuteur
+220|Nom du système
+221|Type d'appareil
+222|Début
+223|Fin
+224|Passes
+225|HPA / DCO
+226|Logiciel
+227|CLIENT
+228|APPAREIL
+229|DISQUES VÉRIFIÉS
+230|DISQUES EFFACÉS
+231|VÉRIFICATION
+232|EFFACEMENT

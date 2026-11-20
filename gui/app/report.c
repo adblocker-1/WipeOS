@@ -33,9 +33,37 @@
 static struct pdf_doc * pdf;
 static struct pdf_object * page;
 
-static void font(const char * f)
+/* Embedded TrueType fonts (subset of IBM Plex Sans, covers Latin, Latin Extended-A and
+ * Cyrillic). Without the font files the standard Helvetica is used (Western European only). */
+static char s_ttf_reg[300], s_ttf_bold[300];
+static int s_ttf = 0;
+
+static void find_fonts(void)
 {
+    const char * dirs[] = {getenv("SHREDOS_FONTS"), "/usr/share/wipeos/fonts", "fonts", "../fonts"};
+    s_ttf = 0;
+    for(size_t i = 0; i < sizeof(dirs) / sizeof(dirs[0]); i++) {
+        if(!dirs[i]) continue;
+        struct stat st;
+        snprintf(s_ttf_reg, sizeof(s_ttf_reg), "%s/WipeOS-Sans-Regular.ttf", dirs[i]);
+        snprintf(s_ttf_bold, sizeof(s_ttf_bold), "%s/WipeOS-Sans-Bold.ttf", dirs[i]);
+        if(stat(s_ttf_reg, &st) == 0 && stat(s_ttf_bold, &st) == 0) {
+            s_ttf = 1;
+            return;
+        }
+    }
+}
+
+/* selects the font and returns the name to use for width calculations */
+static const char * font(const char * f)
+{
+    if(s_ttf) {
+        const char * n = pdf_set_font_ttf(pdf, strstr(f, "Bold") ? s_ttf_bold : s_ttf_reg);
+        if(n) return n;
+        s_ttf = 0;
+    }
     pdf_set_font(pdf, f);
+    return f;
 }
 
 static void text(const char * f, float size, float x, float y, uint32_t col, const char * s)
@@ -47,7 +75,7 @@ static void text(const char * f, float size, float x, float y, uint32_t col, con
 static float text_w(const char * f, float size, const char * s)
 {
     float w = 0;
-    pdf_get_font_text_width(pdf, f, s, size, &w);
+    pdf_get_font_text_width(pdf, font(f), s, size, &w);
     return w;
 }
 
@@ -61,6 +89,8 @@ static void text_fit(const char * f, float size, float x, float y, float maxw, u
 {
     char buf[256];
     str_copy(buf, s, sizeof(buf));
+    /* long text: first use a slightly smaller size (down to 80 %), then cut */
+    for(int i = 0; i < 4 && text_w(f, size, buf) > maxw; i++) size *= 0.95f;
     if(text_w(f, size, buf) > maxw) {
         size_t n = strlen(buf);
         while(n > 3 && text_w(f, size, buf) > maxw) {
@@ -82,13 +112,25 @@ static void hline(float x1, float x2, float y, float w, uint32_t col)
 
 static void section_title(float x, float y, const char * s)
 {
-    text("Helvetica-Bold", 8.5f, x, y, C_MAG, s);
+    text("Helvetica-Bold", 8.5f, x, y, C_MAG, R_(s));
 }
 
 static void kv(float x, float y, float kw, float vw, const char * k, const char * v, const char * vf)
 {
-    text("Helvetica", 9.5f, x, y, C_MUTED, k);
+    text_fit("Helvetica", 9.5f, x, y, kw - 4, C_MUTED, R_(k));
     text_fit(vf ? vf : "Helvetica", 9.5f, x + kw, y, vw, C_INK, (v && v[0]) ? v : "–");
+}
+
+/* width of the label column: widest translated label plus a gap */
+static float key_w(const char * const * keys, int n, float maxw)
+{
+    float w = 0;
+    for(int i = 0; i < n; i++) {
+        float t = text_w("Helvetica", 9.5f, R_(keys[i]));
+        if(t > w) w = t;
+    }
+    w += 10;
+    return w > maxw ? maxw : w;
 }
 
 static void fmt_time(time_t t, char * out, size_t len)
@@ -107,16 +149,28 @@ static int drive_ok(const wipe_drive_t * d)
     return d->status == 0 && d->result == 0 && d->pass_errors == 0 && d->verify_errors == 0 && d->fsync_errors == 0;
 }
 
+/* file name part: ASCII letters, digits, - and _; every other character becomes one '-' */
 static void sanitize_name(char * s)
 {
-    for(char * p = s; *p; p++) {
+    char * w = s;
+    for(const char * p = s; *p; p++) {
         unsigned char c = (unsigned char)*p;
-        if(!((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '-' || c == '_')) *p = '-';
+        if((c & 0xC0) == 0x80) continue; /* continuation byte of a UTF-8 character */
+        if((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '-' || c == '_') *w++ = (char)c;
+        else *w++ = '-';
     }
+    *w = '\0';
 }
 
 static void add_image(const img_t * im, float x, float y, float w, float h)
 {
+    size_t jl = 0;
+    uint8_t * jpg = img_to_jpeg(im, 92, &jl);
+    if(jpg && pdf_add_image_data(pdf, page, x, y, w, h, jpg, jl) >= 0) {
+        free(jpg);
+        return;
+    }
+    free(jpg);
     uint8_t * rgb = img_to_rgb_on_white(im);
     if(!rgb) return;
     pdf_add_rgb24(pdf, page, x, y, w, h, rgb, (uint32_t)im->w, (uint32_t)im->h);
@@ -134,9 +188,9 @@ static void footer(int pageno, int pages)
         tx = ML + 20;
     }
     text("Helvetica", 8, tx, 30, C_MUTED,
-         "Erased with WipeOS · device and drive details from BIOS (DMI) and drive firmware");
+         R_("Erased with WipeOS · device and drive details from BIOS (DMI) and drive firmware"));
     char buf[64];
-    snprintf(buf, sizeof(buf), "Page %d of %d", pageno, pages);
+    snprintf(buf, sizeof(buf), R_("Page %d of %d"), pageno, pages);
     text_right("Helvetica", 8, PW - MR, 32, C_MUTED, buf);
 }
 
@@ -162,12 +216,13 @@ int report_create(char * out_path, size_t len, char * err, size_t errlen)
     memset(&info, 0, sizeof(info));
     str_copy(info.creator, "WipeOS GUI", sizeof(info.creator));
     str_copy(info.producer, "WipeOS / nwipe", sizeof(info.producer));
-    snprintf(info.title, sizeof(info.title), "Erasure report %s", g.order_no);
+    snprintf(info.title, sizeof(info.title), R_("Erasure report %s"), g.order_no);
     str_copy(info.author, g.tech.name, sizeof(info.author));
     snprintf(info.subject, sizeof(info.subject), "%s %s", g.sysname, g.dmi.serial);
     pdf = pdf_create(PW, PH, &info);
+    find_fonts();
     if(!pdf) {
-        str_copy(err, "Could not create PDF", errlen);
+        str_copy(err, R_("Could not create PDF"), errlen);
         return -1;
     }
     page = pdf_append_page(pdf);
@@ -224,12 +279,12 @@ int report_create(char * out_path, size_t len, char * err, size_t errlen)
 
     /* ---- title + result stamp ---- */
     float y = top - hdr_h - 40;
-    text("Helvetica-Bold", 21, ML, y, C_NAVY, vo ? "Verification report" : "Erasure report");
+    text("Helvetica-Bold", 21, ML, y, C_NAVY, vo ? R_("Verification report") : R_("Erasure report"));
     fmt_time(g.wipe_end ? g.wipe_end : time(NULL), buf2, sizeof(buf2));
-    snprintf(buf, sizeof(buf), "Job %s · %s", g.order_no, buf2);
+    snprintf(buf, sizeof(buf), R_("Job %s · %s"), g.order_no, buf2);
     text("Helvetica", 9.5f, ML, y - 16, C_MUTED, buf);
     {
-        const char * st_txt = all_ok ? (vo ? "VERIFIED" : (g.verify ? "ERASED · VERIFIED" : "ERASED")) : (vo ? "VERIFICATION FAILED" : "NOT ERASED");
+        const char * st_txt = all_ok ? (vo ? R_("VERIFIED") : (g.verify ? R_("ERASED · VERIFIED") : R_("ERASED"))) : (vo ? R_("VERIFICATION FAILED") : R_("NOT ERASED"));
         uint32_t sc = all_ok ? C_GREEN : C_RED;
         float fs = 11;
         float tw = text_w("Helvetica-Bold", fs, st_txt);
@@ -259,8 +314,8 @@ int report_create(char * out_path, size_t len, char * err, size_t errlen)
     y -= 30;
     hline(ML, PW - MR, y, 1.5f, C_NAVY);
     y -= 14;
-    snprintf(buf, sizeof(buf), vo ? "%d of %d drives read back and checked · %llu errors" :
-             (g.verify ? "%d of %d drives erased and verified by read-back · %llu errors" : "%d of %d drives erased (no verification) · %llu errors"),
+    snprintf(buf, sizeof(buf), vo ? R_("%d of %d drives read back and checked · %llu errors") :
+             (g.verify ? R_("%d of %d drives erased and verified by read-back · %llu errors") : R_("%d of %d drives erased (no verification) · %llu errors")),
              ok_count, n, (unsigned long long)total_err);
     text("Helvetica-Bold", 9.5f, ML, y, all_ok ? C_GREEN : C_RED, buf);
 
@@ -272,7 +327,10 @@ int report_create(char * out_path, size_t len, char * err, size_t errlen)
     section_title(c2, y, "DEVICE");
     y -= 16;
     float yy = y;
-    float kw = 78;
+    static const char * const k_cust[] = {"Customer", "Customer no.", "Address", "Contact", "Phone / email", "Reference"};
+    static const char * const k_dev[] = {"System name", "Serial number", "Manufacturer", "Model", "Device type", "Asset tag", "BIOS", "UUID"};
+    float kw = key_w(k_cust, 6, colw * 0.5f);
+    float kwd = key_w(k_dev, 8, colw * 0.5f);
     kv(ML, yy, kw, colw - kw, "Customer", g.customer.name, "Helvetica-Bold");
     yy -= 13;
     kv(ML, yy, kw, colw - kw, "Customer no.", g.customer.no, NULL);
@@ -289,34 +347,34 @@ int report_create(char * out_path, size_t len, char * err, size_t errlen)
     if(g.customer.ref[0]) kv(ML, yy, kw, colw - kw, "Reference", g.customer.ref, NULL);
 
     yy = y;
-    kv(c2, yy, kw, colw - kw, "System name", g.sysname, "Helvetica-Bold");
+    kv(c2, yy, kwd, colw - kwd, "System name", g.sysname, "Helvetica-Bold");
     yy -= 13;
-    kv(c2, yy, kw, colw - kw, "Serial number", g.dmi.serial, "Helvetica-Bold");
+    kv(c2, yy, kwd, colw - kwd, "Serial number", g.dmi.serial, "Helvetica-Bold");
     yy -= 13;
-    kv(c2, yy, kw, colw - kw, "Manufacturer", g.dmi.vendor, NULL);
+    kv(c2, yy, kwd, colw - kwd, "Manufacturer", g.dmi.vendor, NULL);
     yy -= 13;
-    kv(c2, yy, kw, colw - kw, "Model", g.dmi.product, NULL);
+    kv(c2, yy, kwd, colw - kwd, "Model", g.dmi.product, NULL);
     yy -= 13;
-    kv(c2, yy, kw, colw - kw, "Device type", g.dmi.chassis, NULL);
+    kv(c2, yy, kwd, colw - kwd, "Device type", R_(g.dmi.chassis), NULL);
     yy -= 13;
-    kv(c2, yy, kw, colw - kw, "Asset tag", g.asset, NULL);
+    kv(c2, yy, kwd, colw - kwd, "Asset tag", g.asset, NULL);
     yy -= 13;
     snprintf(buf, sizeof(buf), "%s%s%s", g.dmi.bios, g.dmi.bios_date[0] ? " · " : "", g.dmi.bios_date);
-    kv(c2, yy, kw, colw - kw, "BIOS", buf, NULL);
+    kv(c2, yy, kwd, colw - kwd, "BIOS", buf, NULL);
     yy -= 13;
-    kv(c2, yy, kw, colw - kw, "UUID", g.dmi.uuid, NULL);
+    kv(c2, yy, kwd, colw - kwd, "UUID", g.dmi.uuid, NULL);
     y -= 8 * 13;
 
     /* ---- drives ---- */
     y -= 26;
     section_title(ML, y, vo ? "VERIFIED DRIVES" : "ERASED DRIVES");
     y -= 18;
-    float cx[6] = {ML + 6, ML + 168, ML + 296, ML + 338, ML + 402, ML + 462};
-    const char * hdr[6] = {"Model", "Serial number", "Type", "Capacity", "Duration", "Result"};
+    float cx[6] = {ML + 6, ML + 158, ML + 280, ML + 322, ML + 392, ML + 452};
+    const char * hdr[6] = {R_("Model"), R_("Serial number"), R_("Type"), R_("Capacity"), R_("Duration"), R_("Result")};
     pdf_add_filled_rectangle(pdf, page, ML, y - 6, PW - ML - MR, 18, 0, C_SOFT, C_SOFT);
     for(int c = 0; c < 6; c++) {
         if(c == 3) text_right("Helvetica-Bold", 8.5f, cx[4] - 10, y, C_INK, hdr[c]);
-        else text("Helvetica-Bold", 8.5f, cx[c], y, C_INK, hdr[c]);
+        else text_fit("Helvetica-Bold", 8.5f, cx[c], y, (c < 5 ? cx[c + 1] : PW - MR) - cx[c] - 4, C_INK, hdr[c]);
     }
     y -= 6;
     hline(ML, PW - MR, y, 0.9f, C_NAVY);
@@ -327,12 +385,12 @@ int report_create(char * out_path, size_t len, char * err, size_t errlen)
             page = pdf_append_page(pdf);
             pageno++;
             y = PH - 60;
-            snprintf(buf, sizeof(buf), "Erasure report %s · continued", g.order_no);
+            snprintf(buf, sizeof(buf), R_("Erasure report %s · continued"), g.order_no);
             text("Helvetica-Bold", 12, ML, y, C_NAVY, buf);
             y -= 24;
             for(int c = 0; c < 6; c++) {
                 if(c == 3) text_right("Helvetica-Bold", 8.5f, cx[4] - 10, y, C_INK, hdr[c]);
-                else text("Helvetica-Bold", 8.5f, cx[c], y, C_INK, hdr[c]);
+                else text_fit("Helvetica-Bold", 8.5f, cx[c], y, (c < 5 ? cx[c + 1] : PW - MR) - cx[c] - 4, C_INK, hdr[c]);
             }
             y -= 6;
             hline(ML, PW - MR, y, 0.9f, C_NAVY);
@@ -349,15 +407,15 @@ int report_create(char * out_path, size_t len, char * err, size_t errlen)
         text_right("Helvetica", 9, cx[4] - 10, y, C_INK, buf2);
         format_duration(d->end > d->start ? (long long)(d->end - d->start) : -1, buf2, sizeof(buf2));
         text_fit("Helvetica", 9, cx[4], y, cx[5] - cx[4] - 6, C_INK, buf2);
-        if(drive_ok(d)) text("Helvetica-Bold", 9, cx[5], y, C_GREEN, vo ? "Verified" : "Erased");
-        else if(d->status != 0) text("Helvetica-Bold", 9, cx[5], y, C_RED, "Aborted");
-        else text("Helvetica-Bold", 9, cx[5], y, C_RED, "Failed");
+        if(drive_ok(d)) text("Helvetica-Bold", 9, cx[5], y, C_GREEN, vo ? R_("Verified") : R_("Erased"));
+        else if(d->status != 0) text("Helvetica-Bold", 9, cx[5], y, C_RED, R_("Aborted"));
+        else text("Helvetica-Bold", 9, cx[5], y, C_RED, R_("Failed"));
         y -= 6;
         hline(ML, PW - MR, y, 0.5f, C_LINE);
     }
     if(n == 0) {
         y -= 15;
-        text("Helvetica", 9, ML, y, C_MUTED, "No drives erased.");
+        text("Helvetica", 9, ML, y, C_MUTED, R_("No drives erased."));
         y -= 6;
     }
 
@@ -384,7 +442,10 @@ int report_create(char * out_path, size_t len, char * err, size_t errlen)
     }
     if(t0 == 0) t0 = g.wipe_start;
     if(t1 == 0) t1 = g.wipe_end;
-    kw = 92;
+    static const char * const k_er1[] = {"Started", "Finished", "Duration", "Method", "Passes"};
+    static const char * const k_er2[] = {"Random generator", "HPA / DCO", "Errors", "Software", "Technician"};
+    kw = key_w(k_er1, 5, colw * 0.5f);
+    kwd = key_w(k_er2, 5, colw * 0.5f);
     fmt_time(t0, buf, sizeof(buf));
     kv(ML, yy, kw, colw - kw, "Started", buf, NULL);
     yy -= 13;
@@ -396,13 +457,18 @@ int report_create(char * out_path, size_t len, char * err, size_t errlen)
     yy -= 13;
     kv(ML, yy, kw, colw - kw, "Method", method_label(g.method), "Helvetica-Bold");
     yy -= 13;
-    if(method_is_verify_only(g.method)) str_copy(buf, "read only", sizeof(buf));
-    else snprintf(buf, sizeof(buf), "%d round%s%s · %s", g.rounds, g.rounds == 1 ? "" : "s", g.blank && g.method != METHOD_OPS2 ? " + blanking" : "",
-                      g.verify == 2 ? "all passes verified" : (g.verify == 1 ? "last pass verified" : "not verified"));
+    if(method_is_verify_only(g.method)) str_copy(buf, R_("read only"), sizeof(buf));
+    else {
+        char rr[64];
+        int bl = g.blank && g.method != METHOD_OPS2;
+        snprintf(rr, sizeof(rr), R_("Rounds: %d"), g.rounds);
+        snprintf(buf, sizeof(buf), "%s%s%s · %s", rr, bl ? " + " : "", bl ? R_("zero blanking") : "",
+                 g.verify == 2 ? R_("all passes verified") : (g.verify == 1 ? R_("last pass verified") : R_("not verified")));
+    }
     kv(ML, yy, kw, colw - kw, "Passes", buf, NULL);
 
     yy = y;
-    kv(c2, yy, kw, colw - kw, "Random generator", method_is_verify_only(g.method) || g.method == METHOD_ZERO || g.method == METHOD_ONE ? "not used" : (st->prng[0] ? st->prng : prng_label(g.prng)), NULL);
+    kv(c2, yy, kwd, colw - kwd, "Random generator", method_is_verify_only(g.method) || g.method == METHOD_ZERO || g.method == METHOD_ONE ? R_("not used") : (st->prng[0] ? st->prng : prng_label(g.prng)), NULL);
     yy -= 13;
     {
         int hpa_any = 0, hpa_none = 0;
@@ -410,22 +476,25 @@ int report_create(char * out_path, size_t len, char * err, size_t errlen)
             if(st->d[i].hpa_status == 1) hpa_any = 1;
             else if(st->d[i].hpa_status == 0 || strcmp(st->d[i].bus, "NVME") == 0) hpa_none = 1;
         }
-        kv(c2, yy, kw, colw - kw, "HPA / DCO", hpa_any ? "detected" : (hpa_none ? "none" : "not checkable"), NULL);
+        kv(c2, yy, kwd, colw - kwd, "HPA / DCO", hpa_any ? R_("detected") : (hpa_none ? R_("none") : R_("not checkable")), NULL);
     }
     yy -= 13;
-    snprintf(buf, sizeof(buf), "%llu (write / sync / verify)", (unsigned long long)total_err);
-    kv(c2, yy, kw, colw - kw, "Errors", buf, NULL);
+    snprintf(buf, sizeof(buf), R_("%llu (write / sync / verify)"), (unsigned long long)total_err);
+    kv(c2, yy, kwd, colw - kwd, "Errors", buf, NULL);
     yy -= 13;
     snprintf(buf, sizeof(buf), "nwipe %s · WipeOS", st->version[0] ? st->version : "");
-    kv(c2, yy, kw, colw - kw, "Software", buf, NULL);
+    kv(c2, yy, kwd, colw - kwd, "Software", buf, NULL);
     yy -= 13;
     snprintf(buf, sizeof(buf), "%s (%s)", g.tech.name, g.tech.id);
-    kv(c2, yy, kw, colw - kw, "Technician", buf, "Helvetica-Bold");
+    kv(c2, yy, kwd, colw - kwd, "Technician", buf, "Helvetica-Bold");
     y -= 5 * 13;
     if(g.note[0]) {
         y -= 8;
-        text("Helvetica", 9.5f, ML, y, C_MUTED, "Note");
-        text_fit("Helvetica", 9.5f, ML + kw, y, PW - ML - MR - kw, C_INK, g.note);
+        {
+            float nw = text_w("Helvetica", 9.5f, R_("Note")) + 10;
+            text("Helvetica", 9.5f, ML, y, C_MUTED, R_("Note"));
+            text_fit("Helvetica", 9.5f, ML + nw, y, PW - ML - MR - nw, C_INK, g.note);
+        }
     }
 
     /* ---- signatures ---- */
@@ -433,10 +502,10 @@ int report_create(char * out_path, size_t len, char * err, size_t errlen)
     float sw = (PW - ML - MR - 40) / 2;
     hline(ML, ML + sw, sy, 0.8f, C_INK);
     hline(ML + sw + 40, PW - MR, sy, 0.8f, C_INK);
-    snprintf(buf, sizeof(buf), "%s (%s) · Technician", g.tech.name, g.tech.id);
+    snprintf(buf, sizeof(buf), "%s (%s) · %s", g.tech.name, g.tech.id, R_("Technician"));
     text_fit("Helvetica", 9, ML, sy - 13, sw, C_MUTED, buf);
     if(g.customer.contact[0]) snprintf(buf, sizeof(buf), "%s · %s", g.customer.contact, g.customer.name);
-    else snprintf(buf, sizeof(buf), "%s · Customer", g.customer.name);
+    else snprintf(buf, sizeof(buf), "%s · %s", g.customer.name, R_("Customer"));
     text_fit("Helvetica", 9, ML + sw + 40, sy - 13, sw, C_MUTED, buf);
 
     footer(pageno, pages);
@@ -453,7 +522,7 @@ int report_create(char * out_path, size_t len, char * err, size_t errlen)
     snprintf(out_path, len, "%s/%s_%s_%s.pdf", dir, g.order_no, sys, ser);
     int r = pdf_save(pdf, out_path);
     if(r < 0) {
-        snprintf(err, errlen, "Saving failed: %s", pdf_get_err(pdf, NULL));
+        snprintf(err, errlen, R_("Saving failed: %s"), pdf_get_err(pdf, NULL));
     }
     pdf_destroy(pdf);
     pdf = NULL;

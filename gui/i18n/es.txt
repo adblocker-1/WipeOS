@@ -1,0 +1,232 @@
+1|Crear trabajo
+2|Archivo no encontrado
+3|Archivo demasiado grande (%.1f MB, máx. %d MB)
+4|No es una imagen PNG o JPG legible
+5|Imagen demasiado grande (%d x %d px, máx. %d x %d)
+6|Imagen demasiado pequeña (%d x %d px)
+7|No se pudo decodificar la imagen (%s)
+8|La imagen es totalmente transparente
+9|Memoria insuficiente
+10|Borrado con WipeOS · datos del equipo y de las unidades obtenidos del BIOS (DMI) y del firmware de las unidades
+11|Página %d de %d
+12|Informe de borrado %s
+13|No se pudo crear el PDF
+14|Informe de verificación
+15|Informe de borrado
+16|Trabajo %s · %s
+17|VERIFICADO
+18|BORRADO · VERIFICADO
+19|BORRADO
+20|VERIFICACIÓN FALLIDA
+21|NO BORRADO
+22|%d de %d unidades leídas y comprobadas · %llu errores
+23|%d de %d unidades borradas y verificadas por relectura · %llu errores
+24|%d de %d unidades borradas (sin verificación) · %llu errores
+25|Modelo
+26|Número de serie
+27|Tipo
+28|Capacidad
+29|Duración
+30|Resultado
+31|Informe de borrado %s · continuación
+32|Verificado
+33|Borrado
+34|Cancelado
+35|Fallido
+36|No se borró ninguna unidad.
+37|solo lectura
+38|Rondas: %d
+39|puesta a cero final
+40|todas las pasadas verificadas
+41|última pasada verificada
+42|sin verificar
+43|no se usa
+44|detectado
+45|ninguno
+46|no comprobable
+47|%llu (escritura / sincronización / verificación)
+48|Nota
+49|Técnico
+50|Cliente
+51|Error al guardar: %s
+52|Seleccionar unidades
+53|Elegir método
+54|Borrar
+55|Informe
+56|Alt + Mayús cambia entre letras cirílicas y latinas.
+57|Igual que la interfaz
+58|Idioma y teclado
+59|Idioma
+60|Distribución del teclado
+61|Idioma del informe de borrado
+62|Prueba del teclado
+63|Escriba aquí para probar la distribución
+64|Cancelar
+65|Guardar
+66|Campo siguiente
+67|Continuar
+68|Zoom
+69|nwipe clásico
+70|TRABAJO %s
+71|Equipo
+72|PASO %d DE 5
+73|Ningún cliente coincide con la búsqueda.
+74|Aún no hay clientes. Cree un cliente nuevo.
+75|Empresa / nombre *
+76|p. ej. Ejemplo S.L.
+77|Referencia
+78|p. ej. n.º de pedido
+79|Persona de contacto
+80|Teléfono / correo
+81|opcional
+82|Calle
+83|Código postal
+84|Ciudad
+85|Se guardará como cliente %s.
+86|Buscar nombre, ciudad o n.º de cliente …
+87|Añadir técnico
+88|Nombre *
+89|Nombre y apellidos
+90|Aún no hay técnicos.
+91|Sin logotipo en el informe
+92|Sin logotipo
+93|Su empresa
+94|Aparece en el membrete de cada informe de borrado.
+95|Nombre de la empresa
+96|p. ej. Ejemplo Servicios IT S.L.
+97|Dirección
+98|Calle, código postal ciudad
+99|p. ej. +34 912 345 678 · servicio@example.com
+100|Guardado en %s/company.txt%s
+101| (solo hasta reiniciar: no se encontró la memoria WipeOS)
+102|Logotipo de la empresa
+103|PNG o JPG en la carpeta wipeos/logos de la memoria · máx. 5 MB, 4000 × 4000 px · ideal: PNG ancho con fondo transparente, de al menos 600 px de ancho
+104|Volver a leer la memoria
+105|Consejo: copie su logotipo en la memoria desde un PC como wipeos/logos/company-logo.png y se usará automáticamente.
+106|Introduzca el nombre del cliente.
+107|Seleccione un cliente.
+108|Seleccione o añada un técnico.
+109|Introduzca un nombre de sistema para el equipo.
+110|Sin memoria WipeOS: los datos solo se conservan hasta reiniciar
+111|Configurar su empresa
+112|Cliente nuevo
+113|Existente
+114|+ Añadir técnico
+115|Fabricante
+116|Nombre del sistema *
+117|p. ej. Contabilidad-PT-07
+118|N.º de inventario
+119|opcional, aparece en el informe
+120|Continuar con las unidades
+121|Ninguna unidad seleccionada
+122|Seleccionadas: %d · %s
+123|Unidades encontradas: %d
+124|Actualizar
+125|Seleccionar todo
+126|SSD NVMe
+127|Disco duro (HDD)
+128|SSD / Flash
+129|Unidad de arranque de WipeOS · protegida
+130|Unidad USB externa
+131|Unidad interna
+132|No se encontraron unidades. Revise las conexiones y pulse «Actualizar».
+133|Atrás
+134|Continuar con el método
+135|Plan
+136|Duración total estimada
+137|Todos los datos de las unidades seleccionadas se borrarán definitivamente.
+138|Error al iniciar
+139|No se pudo iniciar nwipe.
+140|¿Iniciar la verificación?
+141|¿Borrar definitivamente?
+142|Estas unidades solo se leerán y comprobarán. No se modificará ningún dato.
+143|Estas unidades se sobrescribirán por completo. Esto no se puede deshacer.
+144|Iniciar verificación
+145|Borrar definitivamente
+146|¿Cómo deben borrarse las unidades?
+147|Método
+148|Opciones (no se usan en los métodos de solo lectura)
+149|Opciones
+150|Generador aleatorio
+151|Verificación
+152|Desactivada\nÚltima pasada\nTodas las pasadas
+153|Rondas
+154|Pasada final de ceros
+155|Iniciar borrado
+156|Recomendado
+157|En espera …
+158|Verificando
+159|Escribiendo ceros
+160|Escribiendo
+161|%s · pasada %d/%d · %.0f %%
+162|Velocidad %s     Restante %s     Errores %llu
+163|calculando …
+164|aprox. %s
+165|El borrado continúa · toque para reactivar
+166|¿Cancelar el borrado?
+167|Las unidades canceladas solo quedan borradas en parte. La cancelación constará en el informe.
+168|Seguir borrando
+169|Borrando
+170|No apague el equipo. Puede atenuar la pantalla: el borrado continúa.
+171|total
+172|Restante
+173|Transcurrido
+174|Fin estimado
+175|Errores
+176|Iniciando …
+177|Atenuar pantalla
+178|Todas las unidades verificadas
+179|Todas las unidades borradas de forma segura
+180|Verificación fallida
+181|No se borraron todas las unidades
+182|%s · %s · %s · %d de %d verificadas
+183|%s · %s · %s · %d de %d borradas
+184|Unidad
+185|Guardado en la memoria WipeOS, en wipeos/reports
+186|No se encontró la memoria WipeOS: informe solo en memoria (/tmp/wipeos/reports)
+187|No se pudo crear el informe.
+188|Trabajo %s · Cliente %s
+189|Reiniciar
+190|Apagar
+191|Siguiente trabajo
+192|Llena la unidad con un flujo del generador de números aleatorios.
+193|Llena la unidad con ceros (0x00).
+194|Llena la unidad con unos (0xFF).
+195|Norma técnica de seguridad OPS-II de la Real Policía Montada de Canadá.
+196|Departamento de Defensa de EE. UU. 5220.22-M, versión corta de 3 pasadas (pasadas 1, 2 y 7).
+197|Departamento de Defensa de EE. UU. 5220.22-M, versión completa de 7 pasadas.
+198|Método de Peter Gutmann de 35 pasadas. Muy lento, innecesario en unidades modernas.
+199|Método británico HMG IS5 (Enhanced) para información clasificada.
+200|Algoritmo de Bruce Schneier de 7 pasadas con patrones mixtos.
+201|Requisito técnico BMB21-2019 de la Oficina de Secretos de Estado de China.
+202|Solo lee la unidad y comprueba que esté llena de ceros (0x00).
+203|Solo lee la unidad y comprueba que esté llena de unos (0xFF).
+204|Pasadas: %d
+205|verificar todas las pasadas
+206|verificar la última pasada
+207|sin verificación
+208|Sobremesa
+209|Portátil
+210|Dispositivo de mano
+211|Todo en uno
+212|Servidor
+213|Tableta
+214|PC integrado
+215|Ordenador
+216|desconocido
+217|Unidad desconocida
+218|N.º de cliente
+219|Contacto
+220|Nombre del sistema
+221|Tipo de equipo
+222|Inicio
+223|Fin
+224|Pasadas
+225|HPA / DCO
+226|Software
+227|CLIENTE
+228|EQUIPO
+229|UNIDADES VERIFICADAS
+230|UNIDADES BORRADAS
+231|VERIFICACIÓN
+232|BORRADO

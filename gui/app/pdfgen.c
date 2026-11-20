@@ -527,6 +527,7 @@ struct pdf_object {
             int units_per_em;       // from head
             int descriptor_index;   // index of OBJ_font_descriptor
             int cid_font_index;     // index of OBJ_cid_font descendant
+            int tounicode_index;    // index of the ToUnicode CMap stream (WipeOS)
         } font;
         struct {
             char font_name[64];
@@ -1501,6 +1502,64 @@ const char *pdf_set_font_ttf_file(struct pdf_doc *pdf, FILE *fp,
     font_obj->font.descriptor_index = descriptor_obj->index;
     font_obj->font.cid_font_index = cid_obj->index;
 
+    /* WipeOS: ToUnicode CMap, so that text in the PDF can be searched and copied */
+    {
+        struct pdf_object *tu = pdf_add_object(pdf, OBJ_stream);
+        if (tu) {
+            struct dstr body = INIT_DSTR;
+            uint8_t *seen = (uint8_t *)calloc(65536, 1);
+            int count = 0, in_block = 0;
+            dstr_printf(&body,
+                        "/CIDInit /ProcSet findresource begin\r\n"
+                        "12 dict begin\r\nbegincmap\r\n"
+                        "/CIDSystemInfo << /Registry (Adobe) /Ordering (UCS) "
+                        "/Supplement 0 >> def\r\n"
+                        "/CMapName /Adobe-Identity-UCS def\r\n"
+                        "/CMapType 2 def\r\n"
+                        "1 begincodespacerange\r\n<0000> <FFFF>\r\n"
+                        "endcodespacerange\r\n");
+            for (int pass = 0; seen && pass < 2; pass++) {
+                /* pass 0 counts, pass 1 writes blocks of up to 100 entries */
+                int total = count, written = 0;
+                memset(seen, 0, 65536);
+                count = 0;
+                for (uint32_t cp = 0x20; cp < 0xFFFF; cp++) {
+                    uint16_t gid = ttf_cmap_subtable_lookup(
+                        cmap_copy, cmap_subtable_len, cp);
+                    if (gid == 0 || seen[gid])
+                        continue;
+                    seen[gid] = 1;
+                    count++;
+                    if (pass == 0)
+                        continue;
+                    if (!in_block) {
+                        int n = total - written;
+                        dstr_printf(&body, "%d beginbfchar\r\n",
+                                    n > 100 ? 100 : n);
+                        in_block = 1;
+                    }
+                    dstr_printf(&body, "<%04X> <%04X>\r\n", gid, cp);
+                    written++;
+                    if (written % 100 == 0 || written == total) {
+                        dstr_printf(&body, "endbfchar\r\n");
+                        in_block = 0;
+                    }
+                }
+            }
+            free(seen);
+            dstr_printf(&body, "endcmap\r\nCMapName currentdict /CMap "
+                               "defineresource pop\r\nend\r\nend");
+            dstr_printf(&tu->stream.stream,
+                        "<<\r\n  /Length %zu\r\n>>stream\r\n",
+                        dstr_len(&body));
+            dstr_append_data(&tu->stream.stream, dstr_data(&body),
+                             dstr_len(&body));
+            dstr_append(&tu->stream.stream, "\r\nendstream\r\n");
+            dstr_free(&body);
+            font_obj->font.tounicode_index = tu->index;
+        }
+    }
+
     pdf->current_font = font_obj;
     return font_obj->font.name;
 }
@@ -1870,9 +1929,12 @@ static int pdf_save_object_internal(struct pdf_doc *pdf, FILE *fp, int index,
                     "  /Subtype /Type0\r\n"
                     "  /BaseFont /%s\r\n"
                     "  /Encoding /Identity-H\r\n"
-                    "  /DescendantFonts [%d 0 R]\r\n"
-                    ">>\r\n",
+                    "  /DescendantFonts [%d 0 R]\r\n",
                     object->font.name, object->font.cid_font_index);
+            if (object->font.tounicode_index > 0)
+                fprintf(fp, "  /ToUnicode %d 0 R\r\n",
+                        object->font.tounicode_index);
+            fprintf(fp, ">>\r\n");
         } else {
             fprintf(fp,
                     "<<\r\n"
