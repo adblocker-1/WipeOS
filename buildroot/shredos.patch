@@ -33,7 +33,7 @@ index eaf10a94..bff26237 100644
  # tty3 is reserved for the regular console
  4:3:respawn:/sbin/getty 38400 tty4 -n -l /usr/bin/smartdmt_launcher
 diff --git a/board/shredos/genimage.cfg b/board/shredos/genimage.cfg
-index 8242ab1b..4cc46e47 100644
+index 8242ab1b..9268a5c9 100644
 --- a/board/shredos/genimage.cfg
 +++ b/board/shredos/genimage.cfg
 @@ -1,21 +1,25 @@
@@ -63,7 +63,7 @@ index 8242ab1b..4cc46e47 100644
          }
  
 -size = 119873792
-+size = 122605824
++size = 122773760
  }
  
  image shredos.img {
@@ -111,6 +111,55 @@ index 44449cd7..7e15338c 100644
      linux /boot/bzImage console=tty3 loglevel=3 nomodeset
  }
  
+diff --git a/board/shredos/kernel-defconfig b/board/shredos/kernel-defconfig
+index a4b3e22a..19c5e4b0 100644
+--- a/board/shredos/kernel-defconfig
++++ b/board/shredos/kernel-defconfig
+@@ -1302,3 +1302,44 @@ CONFIG_CRYPTO_PCRYPT=y
+ CONFIG_CRYPTO_USER_API_SKCIPHER=y
+ CONFIG_CRYPTO_AES_NI_INTEL=y
+ # CONFIG_FTRACE is not set
++# WipeOS: laptop touchpads (I2C-HID, SMBus, PS/2) and VM pointer devices
++CONFIG_X86_AMD_PLATFORM_DEVICE=y
++CONFIG_I2C_DESIGNWARE_CORE=y
++CONFIG_I2C_DESIGNWARE_PLATFORM=y
++CONFIG_I2C_DESIGNWARE_PCI=y
++CONFIG_I2C_I801=y
++CONFIG_I2C_PIIX4=y
++CONFIG_I2C_AMD_MP2=y
++CONFIG_PINCTRL_AMD=y
++CONFIG_PINCTRL_BAYTRAIL=y
++CONFIG_PINCTRL_CHERRYVIEW=y
++CONFIG_PINCTRL_LYNXPOINT=y
++CONFIG_PINCTRL_INTEL_PLATFORM=y
++CONFIG_PINCTRL_ALDERLAKE=y
++CONFIG_PINCTRL_BROXTON=y
++CONFIG_PINCTRL_CANNONLAKE=y
++CONFIG_PINCTRL_CEDARFORK=y
++CONFIG_PINCTRL_DENVERTON=y
++CONFIG_PINCTRL_ELKHARTLAKE=y
++CONFIG_PINCTRL_EMMITSBURG=y
++CONFIG_PINCTRL_GEMINILAKE=y
++CONFIG_PINCTRL_ICELAKE=y
++CONFIG_PINCTRL_JASPERLAKE=y
++CONFIG_PINCTRL_LAKEFIELD=y
++CONFIG_PINCTRL_LEWISBURG=y
++CONFIG_PINCTRL_METEORLAKE=y
++CONFIG_PINCTRL_METEORPOINT=y
++CONFIG_PINCTRL_SUNRISEPOINT=y
++CONFIG_PINCTRL_TIGERLAKE=y
++CONFIG_MOUSE_PS2_ELANTECH=y
++CONFIG_MOUSE_PS2_ELANTECH_SMBUS=y
++CONFIG_MOUSE_PS2_SENTELIC=y
++CONFIG_MOUSE_PS2_VMMOUSE=y
++CONFIG_MOUSE_ELAN_I2C=y
++CONFIG_MOUSE_ELAN_I2C_SMBUS=y
++CONFIG_MOUSE_SYNAPTICS_I2C=y
++CONFIG_RMI4_I2C=y
++CONFIG_RMI4_SMB=y
++CONFIG_RMI4_F3A=y
++CONFIG_INPUT_TABLET=y
++CONFIG_TABLET_USB_ACECAD=y
 diff --git a/board/shredos/make_img_file.sh b/board/shredos/make_img_file.sh
 index 4bbc817b..a61c552e 100755
 --- a/board/shredos/make_img_file.sh

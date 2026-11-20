@@ -312,6 +312,30 @@ static int key_val(const char * line, const char * key, char * out, size_t len)
     return 1;
 }
 
+int storage_get_scale(void)
+{
+    char path[512], line[64];
+    int sc = 0;
+    path_of(path, sizeof(path), "settings.txt");
+    FILE * fp = fopen(path, "r");
+    if(!fp) return 0;
+    while(fgets(line, sizeof(line), fp))
+        if(strncmp(line, "scale=", 6) == 0) sc = atoi(line + 6);
+    fclose(fp);
+    return sc;
+}
+
+void storage_set_scale(int sc)
+{
+    char path[512];
+    path_of(path, sizeof(path), "settings.txt");
+    FILE * fp = fopen(path, "w");
+    if(!fp) return;
+    fprintf(fp, "# WipeOS display settings. scale: 1 = 100 %%, 2 = 200 %%, 3 = 300 %%, 0 = automatic\nscale=%d\n", sc);
+    fclose(fp);
+    storage_sync();
+}
+
 void storage_load_org(void)
 {
     char path[512];

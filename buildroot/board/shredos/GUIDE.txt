@@ -47,6 +47,16 @@ folder in WipeOS under "Your company".
 - On the report the logo is fitted into 70 x 18 mm (top left), keeping
   its aspect ratio; transparent borders are trimmed automatically.
 
+Keyboard, mouse and display
+---------------------------
+- Keyboard: just start typing, the first field is selected. Tab = next
+  field, Enter = continue. "Keyboard: US/DE" (bottom left) switches the
+  layout.
+- Mouse: USB mice, laptop touchpads (tap = click, two fingers = scroll)
+  and touchscreens are supported.
+- High-resolution displays (QHD, 4K): the interface is enlarged
+  automatically. "Zoom" (bottom left) switches between 100 % and 200 %.
+
 Notes
 -----
 - Method: overwriting with nwipe followed by verification.
