@@ -161,6 +161,8 @@ void storage_next_order_no(char * out, size_t len); /* reserves the number */
 void storage_load_org(void);
 void storage_save_org(void);
 void storage_sync(void);
+int storage_get_scale(void);        /* saved zoom, 0 = automatic */
+void storage_set_scale(int sc);
 int storage_list_images(char names[][LOGO_NAME_LEN], int max); /* PNG/JPG files in the data folder */
 int storage_logo_path(char * out, size_t len);                /* 0 = company logo file exists */
 
@@ -209,7 +211,10 @@ int input_take_wheel(void);
 void input_toggle_layout(void);
 
 /* main.c */
-void app_quit(int code);  /* 10 = classic nwipe, 20 = power off, 21 = reboot */
+void app_quit(int code);  /* 10 = classic nwipe, 20 = power off, 21 = reboot, 30 = restart interface */
+int display_scale(void);            /* 1 = 100 %, 2 = 200 %, ... */
+int display_scale_ok(int sc);
+int display_scale_selectable(void); /* 0 when fixed by boot parameter or the screen is too small */
 
 /* ui.c */
 void ui_init(void);

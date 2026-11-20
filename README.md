@@ -45,7 +45,8 @@ to the stick.
 - **Live progress** per drive with speed, remaining time and error count
 - **PDF erasure report** per device in your company letterhead – **with your own company logo** –
   saved automatically on the stick
-- **Mouse, touchscreen or keyboard** – US and German keyboard layouts, switchable in the UI
+- **Keyboard, mouse, touchpad or touchscreen** – US and German keyboard layouts, switchable in the UI
+- **High-resolution displays:** QHD and 4K screens are enlarged automatically (zoom 100 % / 200 %)
 - **Consecutive job and customer numbers** that survive reboots
 - The **classic nwipe interface** is still available (e.g. for ATA Secure Erase / NVMe Sanitize)
 
@@ -93,7 +94,11 @@ device are already filled in.
 - **Your company** (top right): company name, address, phone/email and your **company logo**.
   They appear in the letterhead of every report. You only need to set this up once
   (see [Company logo](#company-logo)).
-- **Keyboard** (bottom left): switches between the US and German layout.
+- **Keyboard** (bottom left): switches between the US and German layout. You can start typing
+  right away – the first field is already selected. **Tab** moves to the next field.
+- **Mouse:** USB mice, laptop touchpads (tap = click, two fingers = scroll) and touchscreens work.
+- **Zoom** (bottom left, only on high-resolution displays): switches between 100 % and 200 %.
+  From 2560 × 1440 upwards WipeOS starts with 200 % automatically; the choice is saved on the stick.
 
 ![Job filled in](docs/images/03-job.png)
 
@@ -239,6 +244,7 @@ in the `wipeos` folder, split into three subfolders:
 | `wipeos\config\customers.csv` | Customer list, semicolon separated (Excel/LibreOffice) |
 | `wipeos\config\technicians.csv` | Technicians (`ID;Name`) |
 | `wipeos\config\job_counter.txt` | Counter for job numbers (year and number) |
+| `wipeos\config\settings.txt` | Display zoom chosen in the interface |
 | `wipeos\logos\` | Company logos (PNG/JPG), see [Company logo](#company-logo) |
 | `wipeos\reports\` | Erasure reports (PDF) and nwipe logs |
 | `GUIDE.txt` | Short guide |
@@ -267,6 +273,7 @@ PC regularly.
 Additional parameters (press **e** in the boot menu and append them to the `linux` line):
 
 - `wipeos_kbd=de` – German keyboard layout as default (can also be switched in the UI)
+- `wipeos_scale=1` / `wipeos_scale=2` – fixed zoom (100 % / 200 %) instead of the automatic choice
 - `wipeos_gui=0` – classic interface
 
 The classic interface is also available via **"Classic nwipe"** in step 1 (bottom left).
@@ -336,10 +343,11 @@ gui/                      Graphical interface (C, LVGL 9.2, framebuffer + evdev)
   app/wipe.c              Methods, random generators, runs nwipe and reads progress
   app/sysinfo.c           Serial number (DMI) and drives (/sys/block)
   app/storage.c           Config, logos and reports folders on the stick
-  app/input.c             Mouse, touch and keyboard (US and German layouts)
+  app/input.c             Keyboard (US and German layouts), mouse, touchpad, touchscreen
+  app/main.c              Framebuffer output with zoom for high-resolution displays
   lvgl/                   LVGL (git submodule)
 buildroot/                Additions to the ShredOS build
-  shredos.patch           Changes to ShredOS (startup, boot menu, name, packages)
+  shredos.patch           Changes to ShredOS (startup, boot menu, name, packages, touchpad drivers)
   package/shredos-gui/    Buildroot package of the interface
   package/nwipe/          nwipe patch: --status-file option for live progress
   board/shredos/          Startup script, short guide, company.txt and folder templates

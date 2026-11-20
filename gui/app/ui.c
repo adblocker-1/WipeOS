@@ -463,6 +463,15 @@ static void kbd_toggle_cb(lv_event_t * e)
     build_step(s_step);
 }
 
+static void zoom_cb(lv_event_t * e)
+{
+    (void)e;
+    int sc = display_scale() + 1;
+    if(!display_scale_ok(sc)) sc = 1;
+    storage_set_scale(sc);
+    app_quit(30); /* the launcher starts the interface again with the new zoom */
+}
+
 static void build_sidebar(lv_obj_t * parent)
 {
     lv_obj_t * sb = box(parent);
@@ -527,6 +536,15 @@ static void build_sidebar(lv_obj_t * parent)
         lv_obj_set_style_bg_opa(kb, LV_OPA_TRANSP, LV_STATE_PRESSED);
         lv_obj_set_style_text_color(lv_obj_get_child(kb, 0), C(COL_SIDE_TEXT), 0);
         lv_obj_set_style_text_font(lv_obj_get_child(kb, 0), &f_sans_r14, 0);
+        if(display_scale_selectable()) {
+            char zt[48];
+            snprintf(zt, sizeof(zt), "Zoom:  %d %%  " LV_SYMBOL_REFRESH, display_scale() * 100);
+            lv_obj_t * zb = button(sb, zt, BTN_LINK, zoom_cb, NULL);
+            lv_obj_set_style_pad_hor(zb, 0, 0);
+            lv_obj_set_style_bg_opa(zb, LV_OPA_TRANSP, LV_STATE_PRESSED);
+            lv_obj_set_style_text_color(lv_obj_get_child(zb, 0), C(COL_SIDE_TEXT), 0);
+            lv_obj_set_style_text_font(lv_obj_get_child(zb, 0), &f_sans_r14, 0);
+        }
         lv_obj_t * b = button(sb, "Classic nwipe", BTN_LINK, classic_cb, NULL);
         lv_obj_set_style_pad_hor(b, 0, 0);
         lv_obj_set_style_bg_opa(b, LV_OPA_TRANSP, LV_STATE_PRESSED);
@@ -577,6 +595,19 @@ static lv_obj_t * header(lv_obj_t * parent, const char * title, const char * rig
     return h;
 }
 
+static lv_obj_t * first_textarea(lv_obj_t * parent)
+{
+    uint32_t n = lv_obj_get_child_count(parent);
+    for(uint32_t i = 0; i < n; i++) {
+        lv_obj_t * c = lv_obj_get_child(parent, i);
+        if(lv_obj_has_flag(c, LV_OBJ_FLAG_HIDDEN)) continue;
+        if(lv_obj_check_type(c, &lv_textarea_class)) return c;
+        lv_obj_t * r = first_textarea(c);
+        if(r) return r;
+    }
+    return NULL;
+}
+
 static void build_step(int step)
 {
     s_step = step;
@@ -605,7 +636,13 @@ static void build_step(int step)
     extern void build_step4(void);
     extern void build_step5(void);
     switch(step) {
-        case 1: build_step1(); break;
+        case 1: {
+            build_step1();
+            /* start typing right away: focus the first text field */
+            lv_obj_t * ta = first_textarea(s_main);
+            if(ta) lv_group_focus_obj(ta);
+            break;
+        }
         case 2: build_step2(); break;
         case 3: build_step3(); break;
         case 4: build_step4(); break;

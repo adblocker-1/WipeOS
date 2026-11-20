@@ -31,6 +31,9 @@ fi
 # keyboard layout: boot parameter wipeos_kbd=de, default us
 kbd=$(sed -n 's/.*wipeos_kbd=\([a-z]*\).*/\1/p' /proc/cmdline)
 export SHREDOS_KBD=${kbd:-us}
+# display zoom: boot parameter wipeos_scale=1|2|3, default automatic (or the zoom chosen in the UI)
+scale=$(sed -n 's/.*wipeos_scale=\([0-9]\).*/\1/p' /proc/cmdline)
+[ -n "$scale" ] && export SHREDOS_SCALE=$scale
 
 echo 0 > /sys/class/graphics/fbcon/cursor_blink 2>/dev/null
 setterm --cursor off 2>/dev/null
@@ -56,6 +59,9 @@ while true; do
 			sync; umount /mnt/shredos 2>/dev/null
 			reboot
 			sleep 30
+			;;
+		30)
+			# zoom changed: start the interface again
 			;;
 		2)
 			# no framebuffer: classic interface

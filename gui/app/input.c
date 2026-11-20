@@ -1,5 +1,7 @@
 /*
- * Input: mouse/touch and keyboard directly via evdev.
+ * Input: mouse, touchpad, touchscreen and keyboard directly via evdev.
+ * Touchpads are handled like a mouse (relative movement, tap to click,
+ * two-finger scrolling), touchscreens and tablets as absolute pointers.
  * US and German keyboard layouts; text goes into the focused text
  * field, navigation keys go to LVGL.
  * Newly plugged-in devices are detected every few seconds.
@@ -14,13 +16,14 @@
 #include <errno.h>
 #include <sys/ioctl.h>
 #include <linux/input.h>
+#include <math.h>
 
-#define MAX_DEV 24
+#define MAX_DEV 64
 #define BITS_LONG (sizeof(long) * 8)
 #define NLONGS(x) (((x) + BITS_LONG - 1) / BITS_LONG)
 #define TEST_BIT(bit, arr) ((arr[(bit) / BITS_LONG] >> ((bit) % BITS_LONG)) & 1)
 
-typedef enum { DEV_KBD = 1, DEV_REL = 2, DEV_ABS = 4 } dev_kind_t;
+typedef enum { DEV_KBD = 1, DEV_REL = 2, DEV_ABS = 4, DEV_PAD = 8 } dev_kind_t;
 
 typedef struct {
     int fd;
@@ -28,6 +31,15 @@ typedef struct {
     int kind;
     int absx_min, absx_max, absy_min, absy_max;
     int abs_x, abs_y;
+    /* touchpad state */
+    float upmm_x, upmm_y;      /* device units per millimetre */
+    int cur_x, cur_y;          /* latest position of this frame */
+    int last_x, last_y, have_last;
+    int touching, fingers, last_fingers;
+    uint32_t down_time;
+    float moved_mm;
+    int max_fingers;
+    float acc_x, acc_y, acc_scroll;
 } in_dev_t;
 
 static in_dev_t s_dev[MAX_DEV];
@@ -38,6 +50,8 @@ static lv_obj_t * s_cursor;
 static int s_w = 1280, s_h = 800;
 static int s_x, s_y, s_pressed;
 static int s_wheel;
+static uint32_t s_tap_until = 0;   /* tap-to-click: report "pressed" until this tick */
+static uint32_t s_last_key = 0;    /* for "disable tap while typing" */
 static int s_has_kbd = 0, s_has_mouse = 0;
 static int s_shift = 0, s_altgr = 0, s_ctrl = 0, s_caps = 0;
 static uint32_t s_keyq[64];
@@ -114,13 +128,30 @@ static int is_letter(unsigned short code)
     return (c >= 'a' && c <= 'z') || c == 0xC3; /* incl. ä ö ü */
 }
 
+static lv_obj_t * find_textarea(lv_obj_t * parent)
+{
+    uint32_t n = lv_obj_get_child_count(parent);
+    for(uint32_t i = 0; i < n; i++) {
+        lv_obj_t * c = lv_obj_get_child(parent, i);
+        if(lv_obj_has_flag(c, LV_OBJ_FLAG_HIDDEN)) continue;
+        if(lv_obj_check_type(c, &lv_textarea_class) && !lv_obj_has_state(c, LV_STATE_DISABLED) && lv_obj_is_visible(c)) return c;
+        lv_obj_t * r = find_textarea(c);
+        if(r) return r;
+    }
+    return NULL;
+}
+
 static void insert_text(const char * t)
 {
     lv_group_t * grp = lv_group_get_default();
     lv_obj_t * f = grp ? lv_group_get_focused(grp) : NULL;
-    if(f && lv_obj_check_type(f, &lv_textarea_class)) {
-        lv_textarea_add_text(f, t);
+    if(!(f && lv_obj_check_type(f, &lv_textarea_class) && lv_obj_is_visible(f))) {
+        /* typing without a focused field: use the first visible text field */
+        f = find_textarea(lv_layer_top());
+        if(!f) f = find_textarea(lv_screen_active());
+        if(f) lv_group_focus_obj(f);
     }
+    if(f) lv_textarea_add_text(f, t);
 }
 
 static void handle_key(unsigned short code, int value)
@@ -134,6 +165,7 @@ static void handle_key(unsigned short code, int value)
         default: break;
     }
     if(!down) return;
+    s_last_key = lv_tick_get();
 
     uint32_t k = 0;
     switch(code) {
@@ -188,9 +220,17 @@ static void open_dev(const char * path)
     if(TEST_BIT(EV_REL, evbits) && TEST_BIT(REL_X, relbits) && TEST_BIT(REL_Y, relbits)) d.kind |= DEV_REL;
     if(TEST_BIT(EV_ABS, evbits) && TEST_BIT(ABS_X, absbits) && TEST_BIT(ABS_Y, absbits)) {
         struct input_absinfo ax, ay;
+        unsigned long props[NLONGS(INPUT_PROP_CNT)] = {0};
+        ioctl(fd, EVIOCGPROP(sizeof(props)), props);
+        int direct = TEST_BIT(INPUT_PROP_DIRECT, props);
+        int pad = !direct && (TEST_BIT(INPUT_PROP_POINTER, props) || TEST_BIT(INPUT_PROP_BUTTONPAD, props) ||
+                              (TEST_BIT(BTN_TOOL_FINGER, keybits) && !TEST_BIT(BTN_TOOL_PEN, keybits)));
         if(ioctl(fd, EVIOCGABS(ABS_X), &ax) == 0 && ioctl(fd, EVIOCGABS(ABS_Y), &ay) == 0 && ax.maximum > ax.minimum &&
            ay.maximum > ay.minimum) {
-            d.kind |= DEV_ABS;
+            d.kind |= pad ? DEV_PAD : DEV_ABS;
+            /* units per mm; without a resolution assume a 100 mm wide pad */
+            d.upmm_x = ax.resolution > 0 ? (float)ax.resolution : (float)(ax.maximum - ax.minimum) / 100.0f;
+            d.upmm_y = ay.resolution > 0 ? (float)ay.resolution : d.upmm_x;
             d.absx_min = ax.minimum;
             d.absx_max = ax.maximum;
             d.absy_min = ay.minimum;
@@ -202,7 +242,7 @@ static void open_dev(const char * path)
         return;
     }
     if(d.kind & DEV_KBD) s_has_kbd = 1;
-    if(d.kind & (DEV_REL | DEV_ABS)) s_has_mouse = 1;
+    if(d.kind & (DEV_REL | DEV_ABS | DEV_PAD)) s_has_mouse = 1;
     s_dev[s_ndev++] = d;
 }
 
@@ -224,6 +264,114 @@ static void scan_devices(void)
     }
 }
 
+/*
+ * Touchpad: works on the single-touch emulation the kernel provides for every
+ * touchpad (ABS_X/ABS_Y, BTN_TOUCH, BTN_TOOL_FINGER/DOUBLETAP/...).
+ * One finger moves the pointer, a short tap clicks, two fingers scroll.
+ */
+#define TAP_MAX_MS 220
+#define TAP_MAX_MM 1.5f
+#define TYPING_GUARD_MS 400
+
+static void pad_frame(in_dev_t * d)
+{
+    uint32_t now = lv_tick_get();
+    if(!d->touching || d->fingers == 0) {
+        if(d->have_last) {
+            /* finger lifted: was it a tap? */
+            if(d->max_fingers == 1 && (uint32_t)(now - d->down_time) <= TAP_MAX_MS && d->moved_mm <= TAP_MAX_MM &&
+               (uint32_t)(now - s_last_key) > TYPING_GUARD_MS)
+                s_tap_until = now + 90;
+        }
+        d->have_last = 0;
+        d->last_fingers = 0;
+        return;
+    }
+    if(!d->have_last || d->fingers != d->last_fingers) {
+        /* new touch or finger count changed: no jump */
+        if(!d->have_last) {
+            d->down_time = now;
+            d->moved_mm = 0;
+            d->max_fingers = 0;
+            d->acc_x = d->acc_y = d->acc_scroll = 0;
+        }
+        if(d->fingers > d->max_fingers) d->max_fingers = d->fingers;
+        d->last_x = d->cur_x;
+        d->last_y = d->cur_y;
+        d->last_fingers = d->fingers;
+        d->have_last = 1;
+        return;
+    }
+    float dx = (float)(d->cur_x - d->last_x) / d->upmm_x;
+    float dy = (float)(d->cur_y - d->last_y) / d->upmm_y;
+    d->last_x = d->cur_x;
+    d->last_y = d->cur_y;
+    float dist = dx * dx + dy * dy;
+    dist = dist > 0 ? sqrtf(dist) : 0;
+    if(dist > 25.0f) return; /* implausible jump */
+    d->moved_mm += dist;
+    if(d->fingers >= 2) {
+        d->acc_scroll += dy;
+        while(d->acc_scroll >= 3.0f) {
+            s_wheel += 1; /* fingers down = like wheel up */
+            d->acc_scroll -= 3.0f;
+        }
+        while(d->acc_scroll <= -3.0f) {
+            s_wheel -= 1;
+            d->acc_scroll += 3.0f;
+        }
+        return;
+    }
+    /* px per mm: one swipe over a typical pad crosses most of the screen; faster = further */
+    float gain = (float)s_w / 110.0f;
+    float accel = 1.0f + (dist > 0.4f ? (dist - 0.4f) * 0.9f : 0.0f);
+    if(accel > 2.6f) accel = 2.6f;
+    d->acc_x += dx * gain * accel;
+    d->acc_y += dy * gain * accel;
+    int ix = (int)d->acc_x, iy = (int)d->acc_y;
+    d->acc_x -= ix;
+    d->acc_y -= iy;
+    s_x += ix;
+    s_y += iy;
+}
+
+static void pad_event(in_dev_t * d, const struct input_event * ev)
+{
+    if(ev->type == EV_ABS) {
+        if(ev->code == ABS_X) d->cur_x = ev->value;
+        else if(ev->code == ABS_Y) d->cur_y = ev->value;
+    }
+    else if(ev->type == EV_KEY) {
+        switch(ev->code) {
+            case BTN_TOUCH: d->touching = ev->value != 0; if(d->touching && d->fingers == 0) d->fingers = 1; break;
+            case BTN_TOOL_FINGER: if(ev->value) d->fingers = 1; break;
+            case BTN_TOOL_DOUBLETAP: if(ev->value) d->fingers = 2; break;
+            case BTN_TOOL_TRIPLETAP: if(ev->value) d->fingers = 3; break;
+            case BTN_TOOL_QUADTAP: case BTN_TOOL_QUINTTAP: if(ev->value) d->fingers = 4; break;
+            default: break;
+        }
+        if(ev->code == BTN_TOUCH && !ev->value) d->fingers = 0;
+    }
+    else if(ev->type == EV_SYN && ev->code == SYN_REPORT) {
+        pad_frame(d);
+    }
+}
+
+/* for tests: feed raw events into a simulated touchpad */
+void input_test_pad(const struct input_event * ev, int n, int * x, int * y, int * pressed, int * wheel)
+{
+    static in_dev_t pad;
+    if(pad.kind == 0) {
+        pad.kind = DEV_PAD;
+        pad.upmm_x = pad.upmm_y = 12.0f;
+    }
+    for(int i = 0; i < n; i++) pad_event(&pad, &ev[i]);
+    if(x) *x = s_x;
+    if(y) *y = s_y;
+    if(pressed) *pressed = s_pressed || (s_tap_until != 0 && (int32_t)(s_tap_until - lv_tick_get()) > 0);
+    if(wheel) *wheel = s_wheel;
+}
+
 static void drain(void)
 {
     for(int i = 0; i < s_ndev; i++) {
@@ -239,19 +387,20 @@ static void drain(void)
                 }
                 break;
             }
-            if(ev.type == EV_REL) {
+            if(d->kind & DEV_PAD) {
+                pad_event(d, &ev);
+            }
+            else if(ev.type == EV_REL) {
                 if(ev.code == REL_X) s_x += ev.value;
                 else if(ev.code == REL_Y) s_y += ev.value;
                 else if(ev.code == REL_WHEEL) s_wheel += ev.value;
             }
             else if(ev.type == EV_ABS && (d->kind & DEV_ABS)) {
-                if(ev.code == ABS_X || ev.code == ABS_MT_POSITION_X)
-                    s_x = (int)((long)(ev.value - d->absx_min) * (s_w - 1) / (d->absx_max - d->absx_min));
-                else if(ev.code == ABS_Y || ev.code == ABS_MT_POSITION_Y)
-                    s_y = (int)((long)(ev.value - d->absy_min) * (s_h - 1) / (d->absy_max - d->absy_min));
+                if(ev.code == ABS_X) s_x = (int)((long)(ev.value - d->absx_min) * (s_w - 1) / (d->absx_max - d->absx_min));
+                else if(ev.code == ABS_Y) s_y = (int)((long)(ev.value - d->absy_min) * (s_h - 1) / (d->absy_max - d->absy_min));
             }
-            else if(ev.type == EV_KEY) {
-                if(ev.code == BTN_LEFT || ev.code == BTN_TOUCH) s_pressed = ev.value != 0;
+            if(ev.type == EV_KEY && !(d->kind & DEV_PAD && ev.code == BTN_TOUCH)) {
+                if(ev.code == BTN_LEFT || (ev.code == BTN_TOUCH && (d->kind & DEV_ABS))) s_pressed = ev.value != 0;
                 else if(d->kind & DEV_KBD) handle_key(ev.code, ev.value);
             }
             if(s_x < 0) s_x = 0;
@@ -268,7 +417,8 @@ static void ptr_read(lv_indev_t * indev, lv_indev_data_t * data)
     drain();
     data->point.x = s_x;
     data->point.y = s_y;
-    data->state = s_pressed ? LV_INDEV_STATE_PRESSED : LV_INDEV_STATE_RELEASED;
+    int tap = s_tap_until != 0 && (int32_t)(s_tap_until - lv_tick_get()) > 0;
+    data->state = (s_pressed || tap) ? LV_INDEV_STATE_PRESSED : LV_INDEV_STATE_RELEASED;
 }
 
 static uint32_t s_kp_last = 0;
@@ -313,15 +463,36 @@ void input_init(lv_display_t * disp)
     lv_indev_set_read_cb(s_ptr, ptr_read);
     lv_indev_set_display(s_ptr, disp);
 
-    /* mouse pointer: simple round marker */
-    s_cursor = lv_obj_create(lv_layer_sys());
-    lv_obj_remove_style_all(s_cursor);
-    lv_obj_set_size(s_cursor, 14, 14);
-    lv_obj_set_style_bg_opa(s_cursor, LV_OPA_COVER, 0);
-    lv_obj_set_style_bg_color(s_cursor, lv_color_hex(0x16181B), 0);
-    lv_obj_set_style_border_color(s_cursor, lv_color_white(), 0);
-    lv_obj_set_style_border_width(s_cursor, 2, 0);
-    lv_obj_set_style_radius(s_cursor, 7, 0);
+    /* mouse pointer: classic arrow, white with dark outline */
+    {
+        static const char * const arrow[] = {
+            "X...............", "XX..............", "XoX.............", "XooX............", "XoooX...........",
+            "XooooX..........", "XoooooX.........", "XooooooX........", "XoooooooX.......", "XooooooooX......",
+            "XoooooooooX.....", "XooooooooooX....", "XoooooooooooX...", "XooooooXXXXXXX..", "XoooXooX........",
+            "XooX.XooX.......", "XoX..XooX.......", "XX....XooX......", "X.....XooX......", ".......XooX.....",
+            ".......XooX.....", "........XX......",
+        };
+        enum { AW = 16, AH = 22 };
+        static uint8_t px[AW * AH * 4];
+        static lv_image_dsc_t dsc;
+        for(int y = 0; y < AH; y++)
+            for(int x = 0; x < AW; x++) {
+                char c = arrow[y][x];
+                uint8_t * p = px + (y * AW + x) * 4;
+                uint8_t v = c == 'o' ? 0xFF : 0x10;
+                p[0] = p[1] = p[2] = v;
+                p[3] = c == '.' ? 0 : 0xFF;
+            }
+        dsc.header.magic = LV_IMAGE_HEADER_MAGIC;
+        dsc.header.cf = LV_COLOR_FORMAT_ARGB8888;
+        dsc.header.w = AW;
+        dsc.header.h = AH;
+        dsc.header.stride = AW * 4;
+        dsc.data_size = sizeof(px);
+        dsc.data = px;
+        s_cursor = lv_image_create(lv_layer_sys());
+        lv_image_set_src(s_cursor, &dsc);
+    }
     lv_obj_add_flag(s_cursor, LV_OBJ_FLAG_HIDDEN);
     lv_obj_remove_flag(s_cursor, LV_OBJ_FLAG_CLICKABLE);
     lv_indev_set_cursor(s_ptr, s_cursor);
